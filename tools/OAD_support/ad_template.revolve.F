@@ -153,13 +153,10 @@ c we may need these for the checkpointing
            theAction=rvNextAction()
            select case (theAction%actionFlag) 
              case (rvStore)
-                CALL TIMER_START('tape:rvStore',myThid)
                 call cp_write_open(theAction%cpNum+jointCPCount)
 !$PLACEHOLDER_PRAGMA$ id=8
                 call cp_close
-                CALL TIMER_STOP('tape:rvStore',myThid)
              case (rvForward)
-                CALL TIMER_START('tape:rvForward',myThid)
                 call OAD_revPlain
                 do currIter=currIter,theAction%iteration-1
 #ifdef ALLOW_OPENAD_DIVA 
@@ -173,7 +170,6 @@ c we may need these for the checkpointing
 #endif
                 end do
                 call OAD_revTape
-                CALL TIMER_STOP('tape:rvForward',myThid)
              case (rvFirstUTurn)
 #ifdef ALLOW_OPENAD_DIVA 
                 PROD = (currIter+1 + NTIMESTEPS_L2 *(ILOOP +(-1)))
@@ -205,20 +201,15 @@ c we may need these for the checkpointing
      +mythid )
 #endif
              case (rvStore)
-                CALL TIMER_START('adjoint:rvStore',myThid)
                 call cp_write_open(theAction%cpNum+jointCPCount)
 !$PLACEHOLDER_PRAGMA$ id=8
                 call cp_close
-                CALL TIMER_STOP('adjoint:rvStore',myThid)
              case (rvRestore)
-                CALL TIMER_START('adjoint:rvRestore',myThid)
                 call cp_read_open(theAction%cpNum+jointCPCount)
 !$PLACEHOLDER_PRAGMA$ id=9
                 currIter=theAction%iteration
                 call cp_close
-                CALL TIMER_STOP('adjoint:rvRestore',myThid)
              case (rvForward)
-                CALL TIMER_START('adjoint:rvForward',myThid)
                 call OAD_revPlain
                 do currIter=currIter,theAction%iteration-1
 #ifdef ALLOW_OPENAD_DIVA
@@ -232,7 +223,6 @@ c we may need these for the checkpointing
 #endif
                 end do
                 call OAD_revAdjoint
-                CALL TIMER_STOP('adjoint:rvForward',myThid)
              case (rvUTurn)
 #ifdef ALLOW_OPENAD_DIVA
                 PROD = (currIter+1 + NTIMESTEPS_L2 *(ILOOP +(-1))) 

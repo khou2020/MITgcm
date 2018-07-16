@@ -269,7 +269,10 @@ C $OpenAD$ END DECLS
 #ifdef OAD_DEBUG_CP
         !write(standardmessageunit,*)'OAD: cp write x ', x
 #endif
+C       cp_arg_store_real_scalar
+        CALL TIMER_START('ArgStore',myThid)
 	write(unit=cp_io_unit) x
+        CALL TIMER_STOP('ArgStore',myThid)
       end subroutine 
 
       subroutine cp_arg_restore_real_scalar(x)
@@ -278,7 +281,10 @@ C $OpenAD$ INLINE DECLS
         implicit none
         double precision :: x
 C $OpenAD$ END DECLS
+C       cp_arg_restore_real_scalar        
+        CALL TIMER_START('ArgRestore',myThid)
 	read(unit=cp_io_unit) x
+        CALL TIMER_STOP('ArgRestore',myThid)
 #ifdef OAD_DEBUG_CP
         !write(standardmessageunit,*)'OAD: cp read x ', x
 #endif
@@ -294,7 +300,10 @@ C $OpenAD$ END DECLS
 #ifdef OAD_DEBUG_CP
         !write(standardmessageunit,*)'OAD: cp write x ', x%v
 #endif
+C       cp_arg_store_real_scalar_a
+        CALL TIMER_START('ArgStore',myThid)
 	write(unit=cp_io_unit) x%v
+        CALL TIMER_STOP('ArgStore',myThid)
       end subroutine 
 
       subroutine cp_arg_restore_real_scalar_a(x)
@@ -304,7 +313,10 @@ C $OpenAD$ INLINE DECLS
         implicit none
         type(active) :: x
 C $OpenAD$ END DECLS
+C       cp_arg_restore_real_scalar        
+        CALL TIMER_START('ArgRestore',myThid)
       	read(unit=cp_io_unit) x%v
+        CALL TIMER_STOP('ArgRestore',myThid)
 #ifdef OAD_DEBUG_CP
         !write(standardmessageunit,*)'OAD: cp read x ', x%v
 #endif
@@ -319,7 +331,10 @@ C $OpenAD$ END DECLS
 #ifdef OAD_DEBUG_CP
         !write(standardmessageunit,*)'OAD: cp write x ', x(1)
 #endif
+C       cp_arg_store_real_vector
+        CALL TIMER_START('ArgStore',myThid)
 	write(unit=cp_io_unit) x
+        CALL TIMER_STOP('ArgStore',myThid)
       end subroutine 
 
       subroutine cp_arg_restore_real_vector(x)
@@ -328,7 +343,10 @@ C $OpenAD$ INLINE DECLS
         implicit none
         double precision, dimension(:) :: x
 C $OpenAD$ END DECLS
+C       cp_arg_restore_real_scalar        
+        CALL TIMER_START('ArgRestore',myThid)
       	read(unit=cp_io_unit) x
+        CALL TIMER_STOP('ArgRestore',myThid)
 #ifdef OAD_DEBUG_CP
         !write(standardmessageunit,*)'OAD: cp read x ', x(1)
 #endif
@@ -344,7 +362,10 @@ C $OpenAD$ END DECLS
 #ifdef OAD_DEBUG_CP
         !write(standardmessageunit,*)'OAD: cp write x ', x(1)%v
 #endif
+C       cp_arg_store_real_vector_a
+        CALL TIMER_START('ArgStore',myThid)
 	write(unit=cp_io_unit) x%v
+        CALL TIMER_STOP('ArgStore',myThid)
       end subroutine 
 
       subroutine cp_arg_restore_real_vector_a(x)
@@ -354,7 +375,10 @@ C $OpenAD$ INLINE DECLS
         implicit none
         type(active), dimension(:) :: x
 C $OpenAD$ END DECLS
+C       cp_arg_restore_real_scalar        
+        CALL TIMER_START('ArgRestore',myThid)
       	read(unit=cp_io_unit) x%v
+        CALL TIMER_STOP('ArgRestore',myThid)
 #ifdef OAD_DEBUG_CP
         !write(standardmessageunit,*)'OAD: cp read x ', x(1)%v
 #endif
@@ -369,7 +393,10 @@ C $OpenAD$ END DECLS
 #ifdef OAD_DEBUG_CP
         !write(standardmessageunit,*)'OAD: cp write x ', x(1,1)
 #endif
+C       cp_arg_store_real_matrix
+        CALL TIMER_START('ArgStore',myThid)
 	write(unit=cp_io_unit) x
+        CALL TIMER_STOP('ArgStore',myThid)
       end subroutine 
 
       subroutine cp_arg_restore_real_matrix(x)
@@ -378,7 +405,10 @@ C $OpenAD$ INLINE DECLS
         implicit none
         double precision, dimension(:,:) :: x
 C $OpenAD$ END DECLS
+C       cp_arg_restore_real_scalar        
+        CALL TIMER_START('ArgRestore',myThid)
         read(unit=cp_io_unit) x
+        CALL TIMER_STOP('ArgRestore',myThid)
 #ifdef OAD_DEBUG_CP
         !write(standardmessageunit,*)'OAD: cp read x ', x(1,1)
 #endif
@@ -394,7 +424,10 @@ C $OpenAD$ END DECLS
 #ifdef OAD_DEBUG_CP
         !write(standardmessageunit,*)'OAD: cp write x ', x(1,1)%v
 #endif
+C       cp_arg_store_real_matrix_a
+        CALL TIMER_START('ArgStore',myThid)
 	write(unit=cp_io_unit) x%v
+        CALL TIMER_STOP('ArgStore',myThid)
       end subroutine 
 
       subroutine cp_arg_restore_real_matrix_a(x)
@@ -404,7 +437,10 @@ C $OpenAD$ INLINE DECLS
         implicit none
         type(active), dimension(:,:) :: x
 C $OpenAD$ END DECLS
+C       cp_arg_restore_real_scalar        
+        CALL TIMER_START('ArgRestore',myThid)
       	read(unit=cp_io_unit) x%v
+        CALL TIMER_STOP('ArgRestore',myThid)
 #ifdef OAD_DEBUG_CP
         !write(standardmessageunit,*)'OAD: cp read x ', x(1,1)%v
 #endif
@@ -419,7 +455,10 @@ C $OpenAD$ END DECLS
 #ifdef OAD_DEBUG_CP
         !write(standardmessageunit,*)'OAD: cp write x ', x(1,1,1)
 #endif
+C       cp_arg_store_real_three_tensor
+        CALL TIMER_START('ArgStore',myThid)
 	write(unit=cp_io_unit) x
+        CALL TIMER_STOP('ArgStore',myThid)
       end subroutine 
 
       subroutine cp_arg_restore_real_three_tensor(x)
@@ -428,7 +467,10 @@ C $OpenAD$ INLINE DECLS
         implicit none
         double precision, dimension(:,:,:) :: x
 C $OpenAD$ END DECLS
+C       cp_arg_restore_real_scalar        
+        CALL TIMER_START('ArgRestore',myThid)
       	read(unit=cp_io_unit) x
+        CALL TIMER_STOP('ArgRestore',myThid)
 #ifdef OAD_DEBUG_CP
         !write(standardmessageunit,*)'OAD: cp read x ', x(1,1,1)
 #endif
@@ -444,7 +486,10 @@ C $OpenAD$ END DECLS
 #ifdef OAD_DEBUG_CP
         !write(standardmessageunit,*)'OAD: cp write x ', x(1,1,1)%v
 #endif
+C       cp_arg_store_real_three_tensor_a
+        CALL TIMER_START('ArgStore',myThid)
 	write(unit=cp_io_unit) x%v
+        CALL TIMER_STOP('ArgStore',myThid)
       end subroutine 
 
       subroutine cp_arg_restore_real_three_tensor_a(x)
@@ -454,7 +499,10 @@ C $OpenAD$ INLINE DECLS
         implicit none
         type(active), dimension(:,:,:) :: x
 C $OpenAD$ END DECLS
+C       cp_arg_restore_real_scalar        
+        CALL TIMER_START('ArgRestore',myThid)
       	read(unit=cp_io_unit) x%v
+        CALL TIMER_STOP('ArgRestore',myThid)
 #ifdef OAD_DEBUG_CP
         !write(standardmessageunit,*)'OAD: cp read x ', x(1,1,1)%v
 #endif
@@ -469,7 +517,10 @@ C $OpenAD$ END DECLS
 #ifdef OAD_DEBUG_CP
         !write(standardmessageunit,*)'OAD: cp write x ', x(1,1,1,1)
 #endif
+C       cp_arg_store_real_four_tensor
+        CALL TIMER_START('ArgStore',myThid)
 	write(unit=cp_io_unit) x
+        CALL TIMER_STOP('ArgStore',myThid)
       end subroutine 
 
       subroutine cp_arg_restore_real_four_tensor(x)
@@ -478,7 +529,10 @@ C $OpenAD$ INLINE DECLS
         implicit none
         double precision, dimension(:,:,:,:) :: x
 C $OpenAD$ END DECLS
+C       cp_arg_restore_real_scalar        
+        CALL TIMER_START('ArgRestore',myThid)
 	read(unit=cp_io_unit) x
+        CALL TIMER_STOP('ArgRestore',myThid)
 #ifdef OAD_DEBUG_CP
         !write(standardmessageunit,*)'OAD: cp read x ', x(1,1,1,1)
 #endif
@@ -494,7 +548,10 @@ C $OpenAD$ END DECLS
 #ifdef OAD_DEBUG_CP
         !write(standardmessageunit,*)'OAD: cp write x ', x(1,1,1,1)%v
 #endif
+C       cp_arg_store_real_four_tensor_a
+        CALL TIMER_START('ArgStore',myThid)
 	write(unit=cp_io_unit) x%v
+        CALL TIMER_STOP('ArgStore',myThid)
       end subroutine 
 
       subroutine cp_arg_restore_real_four_tensor_a(x)
@@ -504,7 +561,10 @@ C $OpenAD$ INLINE DECLS
         implicit none
         type(active), dimension(:,:,:,:) :: x
 C $OpenAD$ END DECLS
+C       cp_arg_restore_real_scalar        
+        CALL TIMER_START('ArgRestore',myThid)
 	read(unit=cp_io_unit) x%v
+        CALL TIMER_STOP('ArgRestore',myThid)
 #ifdef OAD_DEBUG_CP
         !write(standardmessageunit,*)'OAD: cp read x ', x(1,1,1,1)%v
 #endif 
@@ -519,7 +579,10 @@ C $OpenAD$ END DECLS
 #ifdef OAD_DEBUG_CP
         !write(standardmessageunit,*)'OAD: cp write x ', x(1,1,1,1,1)
 #endif
+C       cp_arg_store_real_five_tensor
+        CALL TIMER_START('ArgStore',myThid)
 	write(unit=cp_io_unit) x
+        CALL TIMER_STOP('ArgStore',myThid)
       end subroutine 
 
       subroutine cp_arg_restore_real_five_tensor(x)
@@ -528,7 +591,10 @@ C $OpenAD$ INLINE DECLS
         implicit none
         double precision, dimension(:,:,:,:,:) :: x
 C $OpenAD$ END DECLS
+C       cp_arg_restore_real_scalar        
+        CALL TIMER_START('ArgRestore',myThid)
 	read(unit=cp_io_unit) x
+        CALL TIMER_STOP('ArgRestore',myThid)
 #ifdef OAD_DEBUG_CP
         !write(standardmessageunit,*)'OAD: cp read x ', x(1,1,1,1,1)
 #endif
@@ -544,7 +610,10 @@ C $OpenAD$ END DECLS
 #ifdef OAD_DEBUG_CP
         !write(standardmessageunit,*)'OAD: cp write x ', x(1,1,1,1,1)%v
 #endif
+C       cp_arg_store_real_five_tensor_a
+        CALL TIMER_START('ArgStore',myThid)
 	write(unit=cp_io_unit) x%v
+        CALL TIMER_STOP('ArgStore',myThid)
       end subroutine 
 
       subroutine cp_arg_restore_real_five_tensor_a(x)
@@ -554,7 +623,10 @@ C $OpenAD$ INLINE DECLS
         implicit none
         type(active), dimension(:,:,:,:,:) :: x
 C $OpenAD$ END DECLS
+C       cp_arg_restore_real_scalar        
+        CALL TIMER_START('ArgRestore',myThid)
 	read(unit=cp_io_unit) x%v
+        CALL TIMER_STOP('ArgRestore',myThid)
 #ifdef OAD_DEBUG_CP
         !write(standardmessageunit,*)'OAD: cp read x ', x(1,1,1,1,1)%v
 #endif
@@ -569,7 +641,10 @@ C $OpenAD$ END DECLS
 #ifdef OAD_DEBUG_CP
         !write(standardmessageunit,*)'OAD: cp write x ', x(1,1,1,1,1,1)
 #endif
+C       cp_arg_store_real_six_tensor
+        CALL TIMER_START('ArgStore',myThid)
 	write(unit=cp_io_unit) x
+        CALL TIMER_STOP('ArgStore',myThid)
       end subroutine 
 
       subroutine cp_arg_restore_real_six_tensor(x)
@@ -578,7 +653,10 @@ C $OpenAD$ INLINE DECLS
         implicit none
         double precision, dimension(:,:,:,:,:,:) :: x
 C $OpenAD$ END DECLS
+C       cp_arg_restore_real_scalar        
+        CALL TIMER_START('ArgRestore',myThid)
 	read(unit=cp_io_unit) x
+        CALL TIMER_STOP('ArgRestore',myThid)
 #ifdef OAD_DEBUG_CP
         !write(standardmessageunit,*)'OAD: cp read x ', x(1,1,1,1,1,1)
 #endif
@@ -594,7 +672,10 @@ C $OpenAD$ END DECLS
 #ifdef OAD_DEBUG_CP
         !write(standardmessageunit,*)'OAD: cp write x ', x(1,1,1,1,1,1)%v
 #endif
+C       cp_arg_store_real_six_tensor_a
+        CALL TIMER_START('ArgStore',myThid)
 	write(unit=cp_io_unit) x%v
+        CALL TIMER_STOP('ArgStore',myThid)
       end subroutine 
 
       subroutine cp_arg_restore_real_six_tensor_a(x)
@@ -604,7 +685,10 @@ C $OpenAD$ INLINE DECLS
         implicit none
         type(active), dimension(:,:,:,:,:,:) :: x
 C $OpenAD$ END DECLS
+C       cp_arg_restore_real_scalar        
+        CALL TIMER_START('ArgRestore',myThid)
 	read(unit=cp_io_unit) x%v
+        CALL TIMER_STOP('ArgRestore',myThid)
 #ifdef OAD_DEBUG_CP
         !write(standardmessageunit,*)'OAD: cp read x ', x(1,1,1,1,1,1)%v
 #endif
@@ -620,7 +704,10 @@ C $OpenAD$ END DECLS
 #ifdef OAD_DEBUG_CP
         !write(standardmessageunit,*)'OAD: cp write i ', i
 #endif
+C       cp_arg_store_integer_scalar
+        CALL TIMER_START('ArgStore',myThid)
 	write(unit=cp_io_unit) i
+        CALL TIMER_STOP('ArgStore',myThid)
       end subroutine 
 
       subroutine cp_arg_restore_integer_scalar(i)
@@ -629,7 +716,10 @@ C $OpenAD$ INLINE DECLS
         implicit none
         integer :: i
 C $OpenAD$ END DECLS
+C       cp_arg_restore_real_scalar        
+        CALL TIMER_START('ArgRestore',myThid)
 	read(unit=cp_io_unit) i
+        CALL TIMER_STOP('ArgRestore',myThid)
 #ifdef OAD_DEBUG_CP
         !write(standardmessageunit,*)'OAD: cp read i ', i
 #endif
@@ -644,7 +734,10 @@ C $OpenAD$ END DECLS
 #ifdef OAD_DEBUG_CP
         !write(standardmessageunit,*)'OAD: cp write i ', i(1)
 #endif
+C       cp_arg_store_integer_vector
+        CALL TIMER_START('ArgStore',myThid)
 	write(unit=cp_io_unit) i
+        CALL TIMER_STOP('ArgStore',myThid)
       end subroutine 
 
       subroutine cp_arg_restore_integer_vector(i)
@@ -653,7 +746,10 @@ C $OpenAD$ INLINE DECLS
         implicit none
         integer, dimension(:) :: i
 C $OpenAD$ END DECLS
+C       cp_arg_restore_real_scalar        
+        CALL TIMER_START('ArgRestore',myThid)
 	read(unit=cp_io_unit) i
+        CALL TIMER_STOP('ArgRestore',myThid)
 #ifdef OAD_DEBUG_CP
         !write(standardmessageunit,*)'OAD: cp read i ', i(1)
 #endif
@@ -668,7 +764,10 @@ C $OpenAD$ END DECLS
 #ifdef OAD_DEBUG_CP
         !write(standardmessageunit,*)'OAD: cp write i ', i(1,1)
 #endif
+C       cp_arg_store_integer_matrix
+        CALL TIMER_START('ArgStore',myThid)
 	write(unit=cp_io_unit) i
+        CALL TIMER_STOP('ArgStore',myThid)
       end subroutine 
 
       subroutine cp_arg_restore_integer_matrix(i)
@@ -677,7 +776,10 @@ C $OpenAD$ INLINE DECLS
         implicit none
         integer, dimension(:,:) :: i
 C $OpenAD$ END DECLS
+C       cp_arg_restore_real_scalar        
+        CALL TIMER_START('ArgRestore',myThid)
 	read(unit=cp_io_unit) i
+        CALL TIMER_STOP('ArgRestore',myThid)
 #ifdef OAD_DEBUG_CP
         !write(standardmessageunit,*)'OAD: cp read i ', i(1,1)
 #endif
@@ -692,7 +794,10 @@ C $OpenAD$ END DECLS
 #ifdef OAD_DEBUG_CP
         !write(standardmessageunit,*)'OAD: cp write i ', i(1,1,1)
 #endif
+C       cp_arg_store_integer_three_tensor
+        CALL TIMER_START('ArgStore',myThid)
 	write(unit=cp_io_unit) i
+        CALL TIMER_STOP('ArgStore',myThid)
       end subroutine 
 
       subroutine cp_arg_restore_integer_three_tensor(i)
@@ -701,7 +806,10 @@ C $OpenAD$ INLINE DECLS
         implicit none
         integer, dimension(:,:,:) :: i
 C $OpenAD$ END DECLS
+C       cp_arg_restore_real_scalar        
+        CALL TIMER_START('ArgRestore',myThid)
         read(unit=cp_io_unit) i
+        CALL TIMER_STOP('ArgRestore',myThid)
 #ifdef OAD_DEBUG_CP
         !write(standardmessageunit,*)'OAD: cp read i ', i(1,1,1)
 #endif
@@ -716,7 +824,10 @@ C $OpenAD$ END DECLS
 #ifdef OAD_DEBUG_CP
         !write(standardmessageunit,*)'OAD: cp write i ', i(1,1,1,1)
 #endif
+C       cp_arg_store_integer_four_tensor
+        CALL TIMER_START('ArgStore',myThid)
         write(unit=cp_io_unit) i
+        CALL TIMER_STOP('ArgStore',myThid)
       end subroutine 
 
       subroutine cp_arg_restore_integer_four_tensor(i)
@@ -725,7 +836,10 @@ C $OpenAD$ INLINE DECLS
         implicit none
         integer, dimension(:,:,:,:) :: i
 C $OpenAD$ END DECLS
+C       cp_arg_restore_real_scalar        
+        CALL TIMER_START('ArgRestore',myThid)
         read(unit=cp_io_unit) i
+        CALL TIMER_STOP('ArgRestore',myThid)
 #ifdef OAD_DEBUG_CP
         !write(standardmessageunit,*)'OAD: cp read i ', i(1,1,1,1)
 #endif
@@ -740,7 +854,10 @@ C $OpenAD$ END DECLS
 #ifdef OAD_DEBUG_CP
         !write(standardmessageunit,*)'OAD: cp write i ', i(1,1,1,1,1)
 #endif
+C       cp_arg_store_integer_five_tensor
+        CALL TIMER_START('ArgStore',myThid)
         write(unit=cp_io_unit) i
+        CALL TIMER_STOP('ArgStore',myThid)
       end subroutine 
 
       subroutine cp_arg_restore_integer_five_tensor(i)
@@ -749,7 +866,10 @@ C $OpenAD$ INLINE DECLS
         implicit none
         integer, dimension(:,:,:,:,:) :: i
 C $OpenAD$ END DECLS
+C       cp_arg_restore_real_scalar        
+        CALL TIMER_START('ArgRestore',myThid)
         read (unit=cp_io_unit) i
+        CALL TIMER_STOP('ArgRestore',myThid)
 #ifdef OAD_DEBUG_CP
         !write(standardmessageunit,*)'OAD: cp read i ', i(1,1,1,1,1)
 #endif
@@ -765,7 +885,10 @@ C $OpenAD$ END DECLS
 #ifdef OAD_DEBUG_CP
         !write(standardmessageunit,*)'OAD: cp write s ', s
 #endif
+C       cp_arg_store_string_scalar
+        CALL TIMER_START('ArgStore',myThid)
         write(unit=cp_io_unit) s
+        CALL TIMER_STOP('ArgStore',myThid)
       end subroutine 
       
       subroutine cp_arg_restore_string_scalar(s)
@@ -774,7 +897,10 @@ C $OpenAD$ INLINE DECLS
       implicit none
       character*(80) :: s
 C $OpenAD$ END DECLS
+C       cp_arg_restore_real_scalar        
+        CALL TIMER_START('ArgRestore',myThid)
         read (unit=cp_io_unit) s
+        CALL TIMER_STOP('ArgRestore',myThid)
 #ifdef OAD_DEBUG_CP
         !write(standardmessageunit,*)'OAD: cp read s ', s
 #endif
@@ -790,7 +916,10 @@ C $OpenAD$ END DECLS
 #ifdef OAD_DEBUG_CP
         !write(standardmessageunit,*)'OAD: cp write b ', b
 #endif
+C       cp_arg_store_bool_scalar
+        CALL TIMER_START('ArgStore',myThid)
         write(unit=cp_io_unit) b
+        CALL TIMER_STOP('ArgStore',myThid)
       end subroutine 
 
       subroutine cp_arg_restore_bool_scalar(b)
@@ -799,7 +928,10 @@ C $OpenAD$ INLINE DECLS
         implicit none
         logical :: b
 C $OpenAD$ END DECLS
+C       cp_arg_restore_real_scalar        
+        CALL TIMER_START('ArgRestore',myThid)
         read (unit=cp_io_unit) b
+        CALL TIMER_STOP('ArgRestore',myThid)
 #ifdef OAD_DEBUG_CP
         !write(standardmessageunit,*)'OAD: cp read b ', b
 #endif
@@ -814,7 +946,10 @@ C $OpenAD$ END DECLS
 #ifdef OAD_DEBUG_CP
         !write(standardmessageunit,*)'OAD: cp write b ', b(1,1)
 #endif
+C       cp_arg_store_bool_matrix
+        CALL TIMER_START('ArgStore',myThid)
 	write(unit=cp_io_unit) b
+        CALL TIMER_STOP('ArgStore',myThid)
       end subroutine 
 
       subroutine cp_arg_restore_bool_matrix(b)
@@ -823,7 +958,10 @@ C $OpenAD$ INLINE DECLS
         implicit none
         logical, dimension(:,:) :: b
 C $OpenAD$ END DECLS
+C       cp_arg_restore_real_scalar        
+        CALL TIMER_START('ArgRestore',myThid)
 	read(unit=cp_io_unit) b
+        CALL TIMER_STOP('ArgRestore',myThid)
 #ifdef OAD_DEBUG_CP
         !write(standardmessageunit,*)'OAD: cp read b ', b(1,1)
 #endif
@@ -840,7 +978,10 @@ C $OpenAD$ END DECLS
 #ifdef OAD_DEBUG_CP
         !write(standardmessageunit,*)'OAD: cp write x%d ', x%d
 #endif
+C       cp_arg_store_real_scalar_a_d
+        CALL TIMER_START('ArgStore',myThid)
 	write(unit=cp_io_unit) x%d
+        CALL TIMER_STOP('ArgStore',myThid)
       end subroutine 
 
       subroutine cp_arg_restore_real_scalar_a_d(x)
@@ -850,7 +991,10 @@ C $OpenAD$ INLINE DECLS
         implicit none
         type(active) :: x
 C $OpenAD$ END DECLS
+C       cp_arg_restore_real_scalar        
+        CALL TIMER_START('ArgRestore',myThid)
       	read(unit=cp_io_unit) x%d
+        CALL TIMER_STOP('ArgRestore',myThid)
 #ifdef OAD_DEBUG_CP
         !write(standardmessageunit,*)'OAD: cp read x%d ', x%d
 #endif
@@ -866,7 +1010,10 @@ C $OpenAD$ END DECLS
 #ifdef OAD_DEBUG_CP
         !write(standardmessageunit,*)'OAD: cp write x%d ', x(1)%d
 #endif
+C       cp_arg_store_real_vector_a_d
+        CALL TIMER_START('ArgStore',myThid)
 	write(unit=cp_io_unit) x%d
+        CALL TIMER_STOP('ArgStore',myThid)
       end subroutine 
 
       subroutine cp_arg_restore_real_vector_a_d(x)
@@ -876,7 +1023,10 @@ C $OpenAD$ INLINE DECLS
         implicit none
         type(active), dimension(:) :: x
 C $OpenAD$ END DECLS
+C       cp_arg_restore_real_scalar        
+        CALL TIMER_START('ArgRestore',myThid)
       	read(unit=cp_io_unit) x%d
+        CALL TIMER_STOP('ArgRestore',myThid)
 #ifdef OAD_DEBUG_CP
         !write(standardmessageunit,*)'OAD: cp read x%d ', x(1)%d
 #endif
@@ -892,7 +1042,10 @@ C $OpenAD$ END DECLS
 #ifdef OAD_DEBUG_CP
         !write(standardmessageunit,*)'OAD: cp write x%d ', x(1,1)%d
 #endif
+C       cp_arg_store_real_matrix_a_d
+        CALL TIMER_START('ArgStore',myThid)
 	write(unit=cp_io_unit) x%d
+        CALL TIMER_STOP('ArgStore',myThid)
       end subroutine 
 
       subroutine cp_arg_restore_real_matrix_a_d(x)
@@ -902,7 +1055,10 @@ C $OpenAD$ INLINE DECLS
         implicit none
         type(active), dimension(:,:) :: x
 C $OpenAD$ END DECLS
+C       cp_arg_restore_real_scalar        
+        CALL TIMER_START('ArgRestore',myThid)
       	read(unit=cp_io_unit) x%d
+        CALL TIMER_STOP('ArgRestore',myThid)
 #ifdef OAD_DEBUG_CP
         !write(standardmessageunit,*)'OAD: cp read x%d ', x(1,1)%d
 #endif
@@ -918,7 +1074,10 @@ C $OpenAD$ END DECLS
 #ifdef OAD_DEBUG_CP
         !write(standardmessageunit,*)'OAD: cp write x%d ', x(1,1,1)%d
 #endif
+C       cp_arg_store_real_three_tensor_a_d
+        CALL TIMER_START('ArgStore',myThid)
 	write(unit=cp_io_unit) x%d
+        CALL TIMER_STOP('ArgStore',myThid)
       end subroutine 
 
       subroutine cp_arg_restore_real_three_tensor_a_d(x)
@@ -928,7 +1087,10 @@ C $OpenAD$ INLINE DECLS
         implicit none
         type(active), dimension(:,:,:) :: x
 C $OpenAD$ END DECLS
+C       cp_arg_restore_real_scalar        
+        CALL TIMER_START('ArgRestore',myThid)
       	read(unit=cp_io_unit) x%d
+        CALL TIMER_STOP('ArgRestore',myThid)
 #ifdef OAD_DEBUG_CP
         !write(standardmessageunit,*)'OAD: cp read x%d ', x(1,1,1)%d
 #endif
@@ -944,7 +1106,10 @@ C $OpenAD$ END DECLS
 #ifdef OAD_DEBUG_CP
         !write(standardmessageunit,*)'OAD: cp write x%d ', x(1,1,1,1)%d
 #endif
+C       cp_arg_store_real_four_tensor_a_d
+        CALL TIMER_START('ArgStore',myThid)
 	write(unit=cp_io_unit) x%d
+        CALL TIMER_STOP('ArgStore',myThid)
       end subroutine 
 
       subroutine cp_arg_restore_real_four_tensor_a_d(x)
@@ -954,7 +1119,10 @@ C $OpenAD$ INLINE DECLS
         implicit none
         type(active), dimension(:,:,:,:) :: x
 C $OpenAD$ END DECLS
+C       cp_arg_restore_real_scalar        
+        CALL TIMER_START('ArgRestore',myThid)
 	read(unit=cp_io_unit) x%d
+        CALL TIMER_STOP('ArgRestore',myThid)
 #ifdef OAD_DEBUG_CP
         !write(standardmessageunit,*)'OAD: cp read x%d ', x(1,1,1,1)%d
 #endif 
@@ -970,7 +1138,10 @@ C $OpenAD$ END DECLS
 #ifdef OAD_DEBUG_CP
         !write(standardmessageunit,*)'OAD: cp write x%d ', x(1,1,1,1,1)%d
 #endif
+C       cp_arg_store_real_five_tensor_a_d
+        CALL TIMER_START('ArgStore',myThid)
 	write(unit=cp_io_unit) x%d
+        CALL TIMER_STOP('ArgStore',myThid)
       end subroutine 
 
       subroutine cp_arg_restore_real_five_tensor_a_d(x)
@@ -980,7 +1151,10 @@ C $OpenAD$ INLINE DECLS
         implicit none
         type(active), dimension(:,:,:,:,:) :: x
 C $OpenAD$ END DECLS
+C       cp_arg_restore_real_scalar        
+        CALL TIMER_START('ArgRestore',myThid)
 	read(unit=cp_io_unit) x%d
+        CALL TIMER_STOP('ArgRestore',myThid)
 #ifdef OAD_DEBUG_CP
         !write(standardmessageunit,*)'OAD: cp read x%d ', x(1,1,1,1,1)%d
 #endif
@@ -996,7 +1170,10 @@ C $OpenAD$ END DECLS
 #ifdef OAD_DEBUG_CP
         !write(standardmessageunit,*)'OAD: cp write x%d ', x(1,1,1,1,1,1)%d
 #endif
+C       cp_arg_store_real_six_tensor_a_d
+        CALL TIMER_START('ArgStore',myThid)
 	write(unit=cp_io_unit) x%d
+        CALL TIMER_STOP('ArgStore',myThid)
       end subroutine 
 
       subroutine cp_arg_restore_real_six_tensor_a_d(x)
@@ -1006,7 +1183,10 @@ C $OpenAD$ INLINE DECLS
         implicit none
         type(active), dimension(:,:,:,:,:,:) :: x
 C $OpenAD$ END DECLS
+C       cp_arg_restore_real_scalar        
+        CALL TIMER_START('ArgRestore',myThid)
 	read(unit=cp_io_unit) x%d
+        CALL TIMER_STOP('ArgRestore',myThid)
 #ifdef OAD_DEBUG_CP
         !write(standardmessageunit,*)'OAD: cp read x%d ', x(1,1,1,1,1,1)%d
 #endif
