@@ -146,6 +146,7 @@ c we may need these for the checkpointing
 #endif
          currIter=0
          jointCPcount=cp_fNumber()
+C        120 is the number of checkpoints, nTimesteps = #Itr
          initialized=rvInit(nTimeSteps,120,
      +                      errorMsg,theAction)
          IF (.NOT.initialized) WRITE(*,'(A,A)') 'Error: ', errorMsg
