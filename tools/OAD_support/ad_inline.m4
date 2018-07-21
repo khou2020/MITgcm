@@ -28,7 +28,15 @@ C       cp_arg_store_$2_$3$4
 ifelse(`$2', `bool',`dnl
         write(cp_io_unit) $8$7
 ', `dnl
-        CALL ifelse($1, `store', `CompressWr_$2_$6', `CompressRd_$2_$6')(cp_io_unit, $8$7)
+ifelse(`$2', `integer',`dnl
+        write(cp_io_unit) $8$7
+', `dnl
+ifelse(`$6', `0',`dnl
+        write(cp_io_unit) $8$7
+', `dnl
+        CALL CompressWr_$2_$6(cp_io_unit, $8$7)
+')dnl
+')dnl
 ')dnl
         CALL TIMER_STOP('ArgStore',myThid)
       end subroutine 
@@ -49,9 +57,17 @@ C $OpenAD$ END DECLS
 C       cp_arg_restore_$2_$3$4
         CALL TIMER_START('ArgRestore',myThid)
 ifelse(`$2', `bool',`dnl
-        write(cp_io_unit, $8$7)
+        read(cp_io_unit) $8$7
 ', `dnl
-        CALL ifelse($1, `store', `CompressRd_$2_$6', `CompressRd_$2_$6')(cp_io_unit, $8$7)
+ifelse(`$2', `integer',`dnl
+        read(cp_io_unit) $8$7
+', `dnl
+ifelse(`$6', `0',`dnl
+        read(cp_io_unit) $8$7
+', `dnl
+        CALL CompressRd_$2_$6(cp_io_unit, $8$7)
+')dnl
+')dnl
 ')dnl
         CALL TIMER_STOP('ArgRestore',myThid)
 #ifdef OAD_DEBUG_CP
