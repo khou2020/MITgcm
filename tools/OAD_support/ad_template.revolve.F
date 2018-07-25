@@ -97,11 +97,11 @@ c we may need these for the checkpointing
 #endif
 
       CALL getenv("MITGCM_OAD_CP_BUDGET", str_cp_budget)
-      if (TRIM(str_cp_budget) == "") theAction
+      if (TRIM(str_cp_budget) == "") then
             cp_budget = 120
       else
             read (str_cp_budget, *) cp_budget
-      endif
+      end if
 
       nIter0 = NINT( (startTime-baseTime)/deltaTClock )
       if (our_rev_mode%arg_store) then 
