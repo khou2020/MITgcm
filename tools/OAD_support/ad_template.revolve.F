@@ -72,12 +72,13 @@ c we may need these for the checkpointing
 !$TEMPLATE_PRAGMA_DECLARATIONS
       LOGICAL :: initialized=.FALSE.
       TYPE(rvAction),save :: theAction
-      CHARACTER(80) :: errorMsg
+      CHARACTER(80) :: errorMsg, str_cp_budget
       integer, save :: jointCPCount
       integer, save :: currIter
 
       integer :: cp_loop_variable_1,cp_loop_variable_2,
-     +     cp_loop_variable_3,cp_loop_variable_4,cp_loop_variable_5
+     +     cp_loop_variable_3,cp_loop_variable_4,cp_loop_variable_5,
+     +      cp_budget
 
       type(modeType) :: our_orig_mode
 
@@ -94,6 +95,13 @@ c we may need these for the checkpointing
       call oad_dump_revmod(); call oad_dump_tapestats()
       write(standardmessageunit,*) 
 #endif
+
+      CALL getenv("MITGCM_OAD_CP_BUDGET", str_cp_budget)
+      if (TRIM(str_cp_budget) == "") theAction
+            cp_budget = 120
+      else
+            read (str_cp_budget, *) cp_budget
+      endif
 
       nIter0 = NINT( (startTime-baseTime)/deltaTClock )
       if (our_rev_mode%arg_store) then 
@@ -142,7 +150,7 @@ c we may need these for the checkpointing
 #endif
          currIter=0
          jointCPcount=cp_fNumber()
-         initialized=rvInit(nTimeSteps,120,
+         initialized=rvInit(nTimeSteps,cp_budget,
      +                      errorMsg,theAction)
          IF (.NOT.initialized) WRITE(*,'(A,A)') 'Error: ', errorMsg
          do while (theAction%actionFlag/=rvDone)
