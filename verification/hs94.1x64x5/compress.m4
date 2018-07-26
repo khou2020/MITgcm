@@ -11,39 +11,18 @@ define(`CONCAT', `$1$2')dnl
 
 define(`CMP_REAL',changequote(`[', `]')dnl
 [dnl
-      subroutine CompressWr_real_$1(unitid, R)
-        IMPLICIT NONE
-        integer :: unitid
-        ifelse($1, `0', `real*8', `real*8, DIMENSION(forloop(`i', `1', $1, `ifelse(i, `1', `:', `, :')'))') :: R
-        ifelse($1, `0', `real*8', `real*8, DIMENSION(SIZEOF(R)/8)') :: F
-        ifelse($1, `0', `real*4', `real*4, DIMENSION(SIZEOF(R)/8)') :: C
-        CALL TIMER_START('ArgCompress',myThid)
-        F = reshape(R, shape(F))
-        C = REAL(F, 4)
-        CALL TIMER_STOP('ArgCompress',myThid)
-        CALL TIMER_START('ArgWrite',myThid)
-        print *, 'write ', SIZEOF(C)
-        write(unit=unitid) C
-        CALL TIMER_STOP('ArgWrite',myThid)
-      END subroutine CompressWr_real_$1
+      void compresswr_real_$1_(double *R, size_t size) {
+          printf("Writing %llu bytes\n", (unsigned long long)size);
+      }
 
-      subroutine CompressRd_real_$1(unitid, D)
-        IMPLICIT NONE
-        integer :: unitid
-        ifelse($1, `0', `real*8', `real*8, DIMENSION(forloop(`i', `1', $1, `ifelse(i, `1', `:', `, :')'))') :: D
-        real*4, DIMENSION(SIZEOF(D)/8) :: C
-        real*8, DIMENSION(SIZEOF(D)/8) :: F
-        CALL TIMER_START('ArgRead',myThid)
-        print *, 'read ', SIZEOF(C)
-        read(unit=unitid) C
-        CALL TIMER_STOP('ArgRead',myThid)
-        CALL TIMER_START('ArgDecompress',myThid)
-        F = REAL(C, 8)
-        D = reshape(F, shape(D))
-        CALL TIMER_STOP('ArgDecompress',myThid)
-      END subroutine CompressRd_real_$1
+      void compressrd_real_$1_(double *D, size_t size) {
+          printf("Reading %llu bytes\n", (unsigned long long)size);
+      }
 
 ]changequote([`], [']))dnl
 dnl
+
+#include <stdlib.h>
+#include <stdio.h>
 
 forloop(`i', `1', `6', `CMP_REAL(i)')

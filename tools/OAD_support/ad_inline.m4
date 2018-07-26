@@ -34,7 +34,7 @@ ifelse(`$2', `integer',`dnl
 ifelse(`$6', `0',`dnl
         write(cp_io_unit) $8$7
 ', `dnl
-        CALL CompressWr_$2_$6(cp_io_unit, $8$7)
+        CALL CompressWr_$2_$6($8$7, SIZEOF($8$7))
 ')dnl
 ')dnl
 ')dnl
@@ -65,7 +65,7 @@ ifelse(`$2', `integer',`dnl
 ifelse(`$6', `0',`dnl
         read(cp_io_unit) $8$7
 ', `dnl
-        CALL CompressRd_$2_$6(cp_io_unit, $8$7)
+        CALL CompressRd_$2_$6($8$7, SIZEOF($8$7))
 ')dnl
 ')dnl
 ')dnl
