@@ -452,6 +452,9 @@ C******************************************************
      &           ' grad-res ',myprocid,ichknum,itilepos,jtilepos,
      &             layer,itile,jtile,obcspos,
      &             fcref, fcpertplus, fcpertminus
+            WRITE(standardmessageunit, *) '#%$: fcref[', ichknum, ']: ', fcref
+            WRITE(standardmessageunit, *) '#%$: fcpertplus[', ichknum, ']: ', fcpertplus
+            WRITE(standardmessageunit, *) '#%$: fcpertminus[', ichknum, ']: ', fcpertminus
 #ifdef ALLOW_TANGENTLINEAR_RUN
             WRITE(standardmessageunit,'(A,8I5,1x,1P3E19.11)')
      &           ' grad-res ',myprocid,ichknum,ichkmem(ichknum),
@@ -464,6 +467,9 @@ C******************************************************
      &             icompmem(ichknum),itestmem(ichknum),
      &             bimem(ichknum),bjmem(ichknum),iobcsmem(ichknum),
      &             adxxmemo, gfd, ratio_ad
+            WRITE(standardmessageunit, *) '#%$: adxxmemo[', ichknum, ']: ', adxxmemo
+            WRITE(standardmessageunit, *) '#%$: gfd[', ichknum, ']: ', gfd
+            WRITE(standardmessageunit, *) '#%$: ratio_ad[', ichknum, ']: ', ratio_ad
 #endif
           ENDIF
 #ifdef ALLOW_TANGENTLINEAR_RUN
