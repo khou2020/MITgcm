@@ -78,7 +78,7 @@ c we may need these for the checkpointing
 
       integer :: cp_loop_variable_1,cp_loop_variable_2,
      +     cp_loop_variable_3,cp_loop_variable_4,cp_loop_variable_5,
-     +      cp_budget
+     +      cp_budget, cpsize
 
       type(modeType) :: our_orig_mode
 
@@ -106,14 +106,16 @@ c we may need these for the checkpointing
       nIter0 = NINT( (startTime-baseTime)/deltaTClock )
       if (our_rev_mode%arg_store) then
       CALL TIMER_STOP('arg_store',myThid) 
-	call cp_write_open()
+	!call cp_write_open()
+      call cp_wr_open(-1)
 #ifdef OAD_DEBUG_JOINT
          write(standardmessageunit,'(A,A,A)') 
      +'OAD:',indentation(1:our_indent), 
      +' __SRNAME__: entering arg store'
 #endif
 !$PLACEHOLDER_PRAGMA$ id=8
-       call cp_close()
+       !call cp_close()
+       call cpc_close()
        CALL TIMER_STOP('arg_store',myThid)
       end if 
       if (our_rev_mode%arg_restore) then
@@ -123,9 +125,11 @@ c we may need these for the checkpointing
      +'OAD:',indentation(1:our_indent), 
      +' __SRNAME__: entering arg restore'
 #endif
-	call cp_read_open()
+	!call cp_read_open()
+      call cp_rd_open(-1)
 !$PLACEHOLDER_PRAGMA$ id=9
-	call cp_close()
+	!call cp_close()
+      call cpc_close
       CALL TIMER_STOP('arg_restore',myThid)
       end if
       if (our_rev_mode%plain) then
@@ -161,9 +165,11 @@ c we may need these for the checkpointing
            theAction=rvNextAction()
            select case (theAction%actionFlag) 
              case (rvStore)
-                call cp_write_open(theAction%cpNum+jointCPCount)
+                !call cp_write_open(theAction%cpNum+jointCPCount)
+                call cp_wr_open(theAction%cpNum+jointCPCount)
 !$PLACEHOLDER_PRAGMA$ id=8
-                call cp_close
+                !call cp_close
+                call cpc_close()
              case (rvForward)
                 call OAD_revPlain
                 do currIter=currIter,theAction%iteration-1
@@ -209,14 +215,18 @@ c we may need these for the checkpointing
      +mythid )
 #endif
              case (rvStore)
-                call cp_write_open(theAction%cpNum+jointCPCount)
+                !call cp_write_open(theAction%cpNum+jointCPCount)
+                call cp_wr_open(theAction%cpNum+jointCPCount)
 !$PLACEHOLDER_PRAGMA$ id=8
-                call cp_close
+                !call cp_close
+                call cpc_close
              case (rvRestore)
-                call cp_read_open(theAction%cpNum+jointCPCount)
+                !call cp_read_open(theAction%cpNum+jointCPCount)
+                call cp_rd_open(theAction%cpNum+jointCPCount)
 !$PLACEHOLDER_PRAGMA$ id=9
                 currIter=theAction%iteration
-                call cp_close
+                !call cp_close
+                call cpc_close
              case (rvForward)
                 call OAD_revPlain
                 do currIter=currIter,theAction%iteration-1

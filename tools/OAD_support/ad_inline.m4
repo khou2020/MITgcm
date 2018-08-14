@@ -24,17 +24,18 @@ C $OpenAD$ END DECLS
         !write(standardmessageunit,*)'OAD: cp write $8$7 ', CONCAT($8, ifelse($6, `0', `', `(forloop(`i', `1', $6, `ifelse(i, `1', `1', `,1')'))'))$7
 #endif
 C       cp_arg_store_$2_$3$4
+        cpsize = SIZEOF(s)
         CALL TIMER_START('ArgStore',myThid)
 ifelse(`$2', `bool',`dnl
-        write(cp_io_unit) $8$7
+        CALL CompressWr_bool($8$7, cpsize)   
 ', `dnl
 ifelse(`$2', `integer',`dnl
-        write(cp_io_unit) $8$7
+        CALL CompressWr_int($8$7, cpsize)   
 ', `dnl
 ifelse(`$6', `0',`dnl
-        write(cp_io_unit) $8$7
+        CALL CompressWr_real($8$7, cpsize)   
 ', `dnl
-        CALL CompressWr_$2_$6(cp_io_unit, $8$7)
+        CALL CompressWr_real($8$7, cpsize)   
 ')dnl
 ')dnl
 ')dnl
@@ -55,17 +56,18 @@ ifelse($4, `', `',`dnl
         CONCAT(ifelse($7, `', `$5', `type(active)'), ifelse($6, `0', `', ``, dimension(forloop(`i', `1', $6, `ifelse(i, `1', `:', `,:')'))'')) :: $8
 C $OpenAD$ END DECLS
 C       cp_arg_restore_$2_$3$4
+        cpsize = SIZEOF(s)
         CALL TIMER_START('ArgRestore',myThid)
 ifelse(`$2', `bool',`dnl
-        read(cp_io_unit) $8$7
+        CALL CompressRd_bool($8$7, cpsize)  
 ', `dnl
 ifelse(`$2', `integer',`dnl
-        read(cp_io_unit) $8$7
+        CALL CompressRd_int($8$7, cpsize)  
 ', `dnl
 ifelse(`$6', `0',`dnl
-        read(cp_io_unit) $8$7
+        CALL CompressRd_real($8$7, cpsize)  
 ', `dnl
-        CALL CompressRd_$2_$6(cp_io_unit, $8$7)
+        CALL CompressRd_real($8$7, cpsize)   
 ')dnl
 ')dnl
 ')dnl
@@ -395,8 +397,9 @@ C $OpenAD$ END DECLS
         !write(standardmessageunit,*)'OAD: cp write s ', s
 #endif
 C       cp_arg_store_string_scalar
+        cpsize = SIZEOF(s)
         CALL TIMER_START('ArgStore',myThid)
-        write(unit=cp_io_unit) s
+        CALL CompressWr_string(s, cpsize)  
         CALL TIMER_STOP('ArgStore',myThid)
       end subroutine 
       
@@ -406,9 +409,10 @@ C $OpenAD$ INLINE DECLS
       implicit none
       character*(80) :: s
 C $OpenAD$ END DECLS
-C       cp_arg_restore_real_scalar        
+C       cp_arg_restore_real_scalar       
+        cpsize = SIZEOF(s)
         CALL TIMER_START('ArgRestore',myThid)
-        read (unit=cp_io_unit) s
+        CALL CompressRd_string(s, cpsize)   
         CALL TIMER_STOP('ArgRestore',myThid)
 #ifdef OAD_DEBUG_CP
         !write(standardmessageunit,*)'OAD: cp read s ', s
