@@ -3492,7 +3492,7 @@ revolve.F90
 OPENAD_SUPPORT_C_SRC_FILES = \
 iaddr.c \
 timeRatio.c \
-compress.c
+cp.c
 
 f95_test_mods.f90: \$(OPENAD_SUPPORT_F90_SRC_FILES:F90=$FS90)
 	cat \$^ > \$@
