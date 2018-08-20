@@ -2965,7 +2965,7 @@ DEFINES = ${DEFINES}
 # Includes for CPP
 INCLUDES = ${INCLUDES}
 # default CPP includes for makedepend
-CPPINCLUDES = ${CPPINCLUDES}
+CPPINCLUDES = ${CPPINCLUDES} -I${ZLIBPATH}/include
 # Flags for KPP
 KFLAGS1 = ${KFLAGS1}
 KFLAGS2 = ${KFLAGS2}
@@ -2982,7 +2982,7 @@ CFLAGS = ${CFLAGS}
 NOOPTFILES = ${NOOPTFILES}
 NOOPTFLAGS = ${NOOPTFLAGS}
 # Flags and libraries needed for linking
-LIBS = ${LIBS}
+LIBS = ${LIBS} -L${ZLIBPATH}/lib -lz
 # Name of the makefile
 MAKEFILE = ${MAKEFILE}
 # Name of the make program
