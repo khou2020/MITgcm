@@ -91,10 +91,12 @@ void cpc_close_(){
 }
 
 
-void compresswr_real_(double *R, int *size) {
-    // STEP 1.
-    // deflate a into b. (that is, compress a into b)
-    
+inline void compresswr(double *R, int *size) {
+    int err;
+    int csize;
+
+    buffer_resize((size_t)*size);
+
     // zlib struct
     z_stream defstream;
     defstream.zalloc = Z_NULL;
@@ -107,64 +109,98 @@ void compresswr_real_(double *R, int *size) {
     defstream.next_out = (Bytef *)buffer; // output char array
     
     // the actual compression work.
-    deflateInit(&defstream, Z_BEST_COMPRESSION);
-    deflate(&defstream, Z_FINISH);
-    deflateEnd(&defstream);
-     
+    err = deflateInit(&defstream, Z_BEST_COMPRESSION);
+    if (err < 0){
+        printf("deflateInit fail: %d: %s\n", err, defstream.msg);
+    }
+    err = deflate(&defstream, Z_FINISH);
+    if (err < 0){
+        printf("deflate fail: %d: %s\n", err, defstream.msg);
+    }
+    err = deflateEnd(&defstream);
+    if (err < 0){
+        printf("deflateEnd fail: %d: %s\n", err, defstream.msg);
+    }
+
     // This is one way of getting the size of the output
-    printf("Write: %d -> %lu\n", *size, defstream.total_out);
-    write(fd, &(defstream.total_out), sizeof(defstream.total_out));
+    csize = (int)defstream.total_out;
+    //printf("Write: %d -> %d\n", *size, csize);
+    write(fd, &(csize), sizeof(csize));
     write(fd, buffer, defstream.total_out);
 }
 
-void compressrd_real_(double *D, int *size) {
-    // STEP 2.
-    // inflate b into c
+inline void compressrd(double *D, int *size) {
+    int err;
+    int dsize;
+
+    buffer_resize((size_t)*size);
+
     // zlib struct
     z_stream infstream;
     infstream.zalloc = Z_NULL;
     infstream.zfree = Z_NULL;
     infstream.opaque = Z_NULL;
     // setup "b" as the input and "c" as the compressed output
-    //infstream.avail_in = (uInt)((char*)defstream.next_out - b); // size of input
-    read(fd, &(infstream.avail_in), sizeof(infstream.avail_in));
+    read(fd, &(dsize), sizeof(dsize));
+    infstream.avail_in = (unsigned long) dsize;
     read(fd, buffer, (size_t)infstream.avail_in);
     infstream.next_in = (Bytef *)buffer; // input char array
     infstream.avail_out = (uInt)(*size); // size of output
     infstream.next_out = (Bytef *)D; // output char array
      
     // the actual DE-compression work.
-    inflateInit(&infstream);
-    inflate(&infstream, Z_NO_FLUSH);
-    inflateEnd(&infstream);
+    err = inflateInit(&infstream);
+    if (err < 0){
+        printf("inflateInit fail: %d: %s\n", err, infstream.msg);
+    }
+    err = inflate(&infstream, Z_NO_FLUSH);
+    if (err < 0){
+        printf("inflate fail: %d: %s\n", err, infstream.msg);
+    }
+    err = inflateEnd(&infstream);
+    if (err < 0){
+        printf("inflateEnd fail: %d: %s\n", err, infstream.msg);
+    }
     
-    printf("Read: %lu -> %d\n",  infstream.total_out, *size);
+    //printf("Read: %lu -> %lu\n", dsize, infstream.total_out);
 }
 
-void compresswr_int_(int *R, int *size) {
-    //printf("Write %d bytes from %llx\n", *size, R);
-    //write(fd, R, *size);
+
+
+
+
+void compresswr_real_(double *R, size_t size) {
+    compresswr(R, size);
 }
 
-void compressrd_int_(int *D, int *size) {
-    //printf("Read %d bytes to %llx\n", *size, D);
-    //read(fd, D, *size);
+void compressrd_real_(double *D, size_t size) {
+    compressrd(D, size);
 }
 
-void compresswr_bool_(int *R, int *size) {
-    write(fd, R, *size);
+
+void compresswr_int_(int *R, size_t size) {
+    compresswr(R, size);
 }
 
-void compressrd_bool_(int *D, int *size) {
-    //printf("Read %d bytes\n", *size);
-    read(fd, D, *size);
+void compressrd_int_(int *D, size_t size) {
+    compressrd(D, size);
 }
 
-void compresswr_string_(int *R, int *size) {
-    write(fd, R, *size);
+
+void compresswr_bool_(int *R, size_t size) {
+    compresswr(R, size);
 }
 
-void compressrd_string_(int *D, int *size) {
-    //printf("Read %d bytes\n", *size);
-    read(fd, D, *size);
+void compressrd_bool_(int *D, size_t size) {
+    compressrd(D, size);
 }
+
+
+void compresswr_string_(char *R, size_t size) {
+    compresswr(R, size);
+}
+
+void compressrd_string_(char *D, size_t size) {
+    compressrd(D, size);
+}
+
