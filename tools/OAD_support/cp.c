@@ -71,28 +71,32 @@ void compressrd_real_(double *D, int *size) {
     read(fd, D, *size);
 }
 
-void compresswr_int_(int *R, int *size) {
+void compresswr_integer_(int *R, int *size) {
     printf("Write %d bytes from %llx\n", *size, R);
     write(fd, R, *size);
 }
 
-void compressrd_int_(int *D, int *size) {
+void compressrd_integer_(int *D, int *size) {
     printf("Read %d bytes to %llx\n", *size, D);
     read(fd, D, *size);
 }
 
 void compresswr_bool_(int *R, int *size) {
+    printf("Write %d bytes from %llx\n", *size, R);
     write(fd, R, *size);
 }
 
 void compressrd_bool_(int *D, int *size) {
+    printf("Read %d bytes to %llx\n", *size, D);
     read(fd, D, *size);
 }
 
 void compresswr_string_(int *R, int *size) {
+    printf("Write %d bytes from %llx\n", *size, R);
     write(fd, R, *size);
 }
 
 void compressrd_string_(int *D, int *size) {
+    printf("Read %d bytes to %llx\n", *size, D);
     read(fd, D, *size);
 }
