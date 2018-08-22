@@ -1,4 +1,5 @@
 
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -13,12 +14,13 @@
 
 static int cp_file_num = 0;
 int fd;
+int dsize;
 size_t bsize;
-void *buffer;
+char *buffer;
 
 void buffer_init(){
     bsize = BSIZE;
-    buffer = malloc(bsize);
+    buffer = (char*)malloc(bsize);
 }
 
 void buffer_free(){
@@ -31,7 +33,7 @@ void buffer_resize(size_t size){
         while(bsize < size){
             bsize <<= 1;
         }
-        buffer = realloc(buffer, bsize);
+        buffer = (char*)realloc(buffer, bsize);
     }
 }   
 
@@ -82,6 +84,8 @@ void cp_rd_open_(int *num){
     fd = open(fname, O_CREAT | O_RDONLY, 0644);
 
     buffer_init();
+
+    read(fd, &dsize, sizeof(dsize));
 }
 
 void cpc_close_(){
@@ -93,7 +97,6 @@ void cpc_close_(){
 
 inline void compresswr(double *R, int *size) {
     int err;
-    int csize;
 
     buffer_resize((size_t)*size);
 
@@ -102,12 +105,11 @@ inline void compresswr(double *R, int *size) {
     defstream.zalloc = Z_NULL;
     defstream.zfree = Z_NULL;
     defstream.opaque = Z_NULL;
-    // setup "a" as the input and "b" as the compressed output
-    defstream.avail_in = (uInt)(*size); // size of input, string + terminator
-    defstream.next_in = (Bytef *)R; // input char array
-    defstream.avail_out = (uInt)bsize; // size of output
-    defstream.next_out = (Bytef *)buffer; // output char array
-    
+    defstream.avail_in = (uInt)(*size); // input size
+    defstream.next_in = (Bytef *)R; // input
+    defstream.avail_out = (uInt)bsize; // output buffer size
+    defstream.next_out = (Bytef *)(buffer + sizeof(dsize)); // output buffer
+
     // the actual compression work.
     err = deflateInit(&defstream, Z_BEST_COMPRESSION);
     if (err < 0){
@@ -122,31 +124,33 @@ inline void compresswr(double *R, int *size) {
         printf("deflateEnd fail: %d: %s\n", err, defstream.msg);
     }
 
-    // This is one way of getting the size of the output
-    csize = (int)defstream.total_out;
-    //printf("Write: %d -> %d\n", *size, csize);
-    write(fd, &(csize), sizeof(csize));
-    write(fd, buffer, defstream.total_out);
+    // Size of variable
+    dsize = (int)defstream.total_out;
+    *((int*)buffer) = dsize;
+
+    // Write to file
+    write(fd, buffer, defstream.total_out + sizeof(dsize));
+ 
+    printf("Write: %d -> %d\n", *size, dsize);
 }
 
 inline void compressrd(double *D, int *size) {
     int err;
-    int dsize;
 
     buffer_resize((size_t)*size);
+
+    // Read from file
+    read(fd, buffer, dsize + sizeof(dsize));
 
     // zlib struct
     z_stream infstream;
     infstream.zalloc = Z_NULL;
     infstream.zfree = Z_NULL;
     infstream.opaque = Z_NULL;
-    // setup "b" as the input and "c" as the compressed output
-    read(fd, &(dsize), sizeof(dsize));
-    infstream.avail_in = (unsigned long) dsize;
-    read(fd, buffer, (size_t)infstream.avail_in);
-    infstream.next_in = (Bytef *)buffer; // input char array
-    infstream.avail_out = (uInt)(*size); // size of output
-    infstream.next_out = (Bytef *)D; // output char array
+    infstream.avail_in = (unsigned long) dsize; // input size
+    infstream.next_in = (Bytef *)buffer; // input
+    infstream.avail_out = (uInt)(*size); // output buffer
+    infstream.next_out = (Bytef *)D; // buffer size
      
     // the actual DE-compression work.
     err = inflateInit(&infstream);
@@ -161,9 +165,17 @@ inline void compressrd(double *D, int *size) {
     if (err < 0){
         printf("inflateEnd fail: %d: %s\n", err, infstream.msg);
     }
+    if (*size != infstream.total_out){
+        printf("Size mismatch: origin: %d, decompress: %lu\n", *size, infstream.total_out);
+    }
+
+    printf("Read: %lu -> %lu\n", dsize, infstream.total_out);
     
-    //printf("Read: %lu -> %lu\n", dsize, infstream.total_out);
+    // Size of next variable
+    dsize = *((int*)(buffer + dsize));
 }
+
+
 
 
 
