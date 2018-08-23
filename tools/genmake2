@@ -3487,7 +3487,8 @@ OAD_cp.F90 \
 OAD_rev.F90 \
 OAD_tape.F90 \
 OAD_regular_cp.F90 \
-revolve.F90
+revolve.F90 \
+cp_f.F90
 
 OPENAD_SUPPORT_C_SRC_FILES = \
 iaddr.c \
