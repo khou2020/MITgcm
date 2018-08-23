@@ -34,11 +34,11 @@ dnl
 
 define(`CMP_CP_DIM',dnl
 `dnl
-    forloop(`i', `1', `6', `CMP_CP($1, i, $2)')
+    forloop(`i', `0', `6', `CMP_CP($1, i, $2, $3)')
 ')dnl
 
       module cpc
         implicit none
         contains
-        foreach(`i', (`(`real', `double precision')', `(`integer', `integer')', `(`bool', `logical')'), `CMP_CP_DIM(translit(i, `()'))')
+        foreach(`i', (`(`real', `double precision', `8')', `(`integer', `integer', `4')', `(`bool', `logical', `4')'), `CMP_CP_DIM(translit(i, `()'))')
       end module

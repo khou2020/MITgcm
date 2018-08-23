@@ -7,6 +7,23 @@
         implicit none
         contains
             
+      subroutine CompressRdC_real_0(x)
+        implicit none
+        integer :: cpsize
+        double precision :: x
+        cpsize = SIZEOF(x)
+        CALL CompressRd_real(x, cpsize) 
+      end subroutine 
+
+      subroutine CompressWrC_real_0(x)
+        implicit none
+        integer :: cpsize
+        double precision :: x
+        cpsize = SIZEOF(x)
+        CALL CompressWr_real(x, cpsize) 
+      end subroutine 
+
+
       subroutine CompressRdC_real_1(x)
         implicit none
         integer :: cpsize
@@ -110,6 +127,23 @@
 
 
     
+      subroutine CompressRdC_integer_0(x)
+        implicit none
+        integer :: cpsize
+        integer :: x
+        cpsize = SIZEOF(x)
+        CALL CompressRd_integer(x, cpsize) 
+      end subroutine 
+
+      subroutine CompressWrC_integer_0(x)
+        implicit none
+        integer :: cpsize
+        integer :: x
+        cpsize = SIZEOF(x)
+        CALL CompressWr_integer(x, cpsize) 
+      end subroutine 
+
+
       subroutine CompressRdC_integer_1(x)
         implicit none
         integer :: cpsize
@@ -213,6 +247,23 @@
 
 
     
+      subroutine CompressRdC_bool_0(x)
+        implicit none
+        integer :: cpsize
+        logical :: x
+        cpsize = SIZEOF(x)
+        CALL CompressRd_bool(x, cpsize) 
+      end subroutine 
+
+      subroutine CompressWrC_bool_0(x)
+        implicit none
+        integer :: cpsize
+        logical :: x
+        cpsize = SIZEOF(x)
+        CALL CompressWr_bool(x, cpsize) 
+      end subroutine 
+
+
       subroutine CompressRdC_bool_1(x)
         implicit none
         integer :: cpsize
