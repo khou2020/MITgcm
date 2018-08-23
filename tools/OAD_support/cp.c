@@ -181,38 +181,39 @@ inline void compressrd(double *D, int *size) {
 
 
 
-void compresswr_real_(double *R, size_t size) {
+void compresswr_real_(double *R, size_t *size  ) {
     compresswr(R, size);
 }
 
-void compressrd_real_(double *D, size_t size) {
+void compressrd_real_(double *D, size_t *size  ) {
     compressrd(D, size);
 }
 
 
-void compresswr_int_(int *R, size_t size) {
+void compresswr_integer_(int *R, size_t *size  ) {
     compresswr(R, size);
 }
 
-void compressrd_int_(int *D, size_t size) {
+void compressrd_integer_(int *D, size_t *size  ) {
     compressrd(D, size);
 }
 
 
-void compresswr_bool_(int *R, size_t size) {
+void compresswr_bool_(int *R, size_t *size  ) {
     compresswr(R, size);
 }
 
-void compressrd_bool_(int *D, size_t size) {
+void compressrd_bool_(int *D, size_t *size  ) {
     compressrd(D, size);
 }
 
 
-void compresswr_string_(char *R, size_t size) {
+void compresswr_string_(char *R, size_t *size , long l ) {
     compresswr(R, size);
 }
 
-void compressrd_string_(char *D, size_t size) {
+void compressrd_string_(char *D, size_t *size , long l ) {
     compressrd(D, size);
 }
+
 

@@ -191,19 +191,18 @@ define(`CONCAT', `$1$2')dnl
 define(`CMP_REAL',changequote(`[', `]')dnl
 [dnl
 
-void compresswr_$1_($2 *R, size_t size) {
+void compresswr_$1_($2 *R, size_t *size ifelse(`$3', `', `', `, $3') ) {
     compresswr(R, size);
 }
 
-void compressrd_$1_($2 *D, size_t size) {
+void compressrd_$1_($2 *D, size_t *size ifelse(`$3', `', `', `, $3') ) {
     compressrd(D, size);
 }
 
 ]changequote([`], [']))dnl
 dnl
 
-foreach(`dt', (`(`real', `double')', dnl
-               `(`int', `int')', dnl
-               `(`bool', `int')', dnl
-               `(`string', `char')', dnl
-               ), `CMP_REAL(translit(dt, `()'))')dnl
+foreach(`i', (`(`real', `double', `')',dnl
+                `(`integer', `int', `')',dnl
+                `(`bool', `int', `')',dnl 
+                `(`string', `char', ` long l')'), `CMP_REAL(translit(i, `()'))')

@@ -24,20 +24,12 @@ C $OpenAD$ END DECLS
         !write(standardmessageunit,*)'OAD: cp write $8$7 ', CONCAT($8, ifelse($6, `0', `', `(forloop(`i', `1', $6, `ifelse(i, `1', `1', `,1')'))'))$7
 #endif
 C       cp_arg_store_$2_$3$4
-        cpsize = SIZEOF($8$7)
         CALL TIMER_START('ArgStore',myThid)
-ifelse(`$2', `bool',`dnl
-        CALL CompressWr_bool($8$7, cpsize)   
+ifelse($7, `', `dnl
+        cpsize = SIZEOF($8)
+        CALL CompressWr_$2($8, cpsize) 
 ', `dnl
-ifelse(`$2', `integer',`dnl
-        CALL CompressWr_int($8$7, cpsize)   
-', `dnl
-ifelse(`$6', `0',`dnl
-        CALL CompressWr_real($8$7, cpsize)   
-', `dnl
-        CALL CompressWr_real($8$7, cpsize)   
-')dnl
-')dnl
+        CALL CompressWrC_$2_$6($8$7) 
 ')dnl
         CALL TIMER_STOP('ArgStore',myThid)
       end subroutine 
@@ -56,20 +48,13 @@ ifelse($4, `', `',`dnl
         CONCAT(ifelse($7, `', `$5', `type(active)'), ifelse($6, `0', `', ``, dimension(forloop(`i', `1', $6, `ifelse(i, `1', `:', `,:')'))'')) :: $8
 C $OpenAD$ END DECLS
 C       cp_arg_restore_$2_$3$4
-        cpsize = SIZEOF($8$7)
         CALL TIMER_START('ArgRestore',myThid)
-ifelse(`$2', `bool',`dnl
-        CALL CompressRd_bool($8$7, cpsize)  
+ifelse($7, `', `dnl        
+        cpsize = SIZEOF($8)
+        CALL CompressRd_$2($8, cpsize) 
+
 ', `dnl
-ifelse(`$2', `integer',`dnl
-        CALL CompressRd_int($8$7, cpsize)  
-', `dnl
-ifelse(`$6', `0',`dnl
-        CALL CompressRd_real($8$7, cpsize)  
-', `dnl
-        CALL CompressRd_real($8$7, cpsize)   
-')dnl
-')dnl
+        CALL CompressRdC_$2_$6($8$7) 
 ')dnl
         CALL TIMER_STOP('ArgRestore',myThid)
 #ifdef OAD_DEBUG_CP

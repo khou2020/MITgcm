@@ -68,6 +68,7 @@ c we may need these for the checkpointing
       use ctrl_weights_mod
       use optim_mod
       use grdchk_mod
+      use cpc
       
 !$TEMPLATE_PRAGMA_DECLARATIONS
       LOGICAL :: initialized=.FALSE.
