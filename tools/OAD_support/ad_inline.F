@@ -275,7 +275,7 @@ C $OpenAD$ END DECLS
 C       cp_arg_store_real_scalar
         CALL TIMER_START('ArgStore',myThid)
         cpsize = SIZEOF(x)
-        CALL CompressWr_real(x, cpsize) 
+        CALL CompressWr_real(x, cpsize, 0, shape(x)) 
         CALL TIMER_STOP('ArgStore',myThid)
       end subroutine 
 
@@ -288,7 +288,7 @@ C $OpenAD$ END DECLS
 C       cp_arg_restore_real_scalar
         CALL TIMER_START('ArgRestore',myThid)
         cpsize = SIZEOF(x)
-        CALL CompressRd_real(x, cpsize) 
+        CALL CompressRd_real(x, cpsize, 0, shape(x)) 
 
         CALL TIMER_STOP('ArgRestore',myThid)
 #ifdef OAD_DEBUG_CP
@@ -341,7 +341,7 @@ C $OpenAD$ END DECLS
 C       cp_arg_store_real_vector
         CALL TIMER_START('ArgStore',myThid)
         cpsize = SIZEOF(x)
-        CALL CompressWr_real(x, cpsize) 
+        CALL CompressWr_real(x, cpsize, 1, shape(x)) 
         CALL TIMER_STOP('ArgStore',myThid)
       end subroutine 
 
@@ -354,7 +354,7 @@ C $OpenAD$ END DECLS
 C       cp_arg_restore_real_vector
         CALL TIMER_START('ArgRestore',myThid)
         cpsize = SIZEOF(x)
-        CALL CompressRd_real(x, cpsize) 
+        CALL CompressRd_real(x, cpsize, 1, shape(x)) 
 
         CALL TIMER_STOP('ArgRestore',myThid)
 #ifdef OAD_DEBUG_CP
@@ -407,7 +407,7 @@ C $OpenAD$ END DECLS
 C       cp_arg_store_real_matrix
         CALL TIMER_START('ArgStore',myThid)
         cpsize = SIZEOF(x)
-        CALL CompressWr_real(x, cpsize) 
+        CALL CompressWr_real(x, cpsize, 2, shape(x)) 
         CALL TIMER_STOP('ArgStore',myThid)
       end subroutine 
 
@@ -420,7 +420,7 @@ C $OpenAD$ END DECLS
 C       cp_arg_restore_real_matrix
         CALL TIMER_START('ArgRestore',myThid)
         cpsize = SIZEOF(x)
-        CALL CompressRd_real(x, cpsize) 
+        CALL CompressRd_real(x, cpsize, 2, shape(x)) 
 
         CALL TIMER_STOP('ArgRestore',myThid)
 #ifdef OAD_DEBUG_CP
@@ -473,7 +473,7 @@ C $OpenAD$ END DECLS
 C       cp_arg_store_real_three_tensor
         CALL TIMER_START('ArgStore',myThid)
         cpsize = SIZEOF(x)
-        CALL CompressWr_real(x, cpsize) 
+        CALL CompressWr_real(x, cpsize, 3, shape(x)) 
         CALL TIMER_STOP('ArgStore',myThid)
       end subroutine 
 
@@ -486,7 +486,7 @@ C $OpenAD$ END DECLS
 C       cp_arg_restore_real_three_tensor
         CALL TIMER_START('ArgRestore',myThid)
         cpsize = SIZEOF(x)
-        CALL CompressRd_real(x, cpsize) 
+        CALL CompressRd_real(x, cpsize, 3, shape(x)) 
 
         CALL TIMER_STOP('ArgRestore',myThid)
 #ifdef OAD_DEBUG_CP
@@ -539,7 +539,7 @@ C $OpenAD$ END DECLS
 C       cp_arg_store_real_four_tensor
         CALL TIMER_START('ArgStore',myThid)
         cpsize = SIZEOF(x)
-        CALL CompressWr_real(x, cpsize) 
+        CALL CompressWr_real(x, cpsize, 4, shape(x)) 
         CALL TIMER_STOP('ArgStore',myThid)
       end subroutine 
 
@@ -552,7 +552,7 @@ C $OpenAD$ END DECLS
 C       cp_arg_restore_real_four_tensor
         CALL TIMER_START('ArgRestore',myThid)
         cpsize = SIZEOF(x)
-        CALL CompressRd_real(x, cpsize) 
+        CALL CompressRd_real(x, cpsize, 4, shape(x)) 
 
         CALL TIMER_STOP('ArgRestore',myThid)
 #ifdef OAD_DEBUG_CP
@@ -605,7 +605,7 @@ C $OpenAD$ END DECLS
 C       cp_arg_store_real_five_tensor
         CALL TIMER_START('ArgStore',myThid)
         cpsize = SIZEOF(x)
-        CALL CompressWr_real(x, cpsize) 
+        CALL CompressWr_real(x, cpsize, 5, shape(x)) 
         CALL TIMER_STOP('ArgStore',myThid)
       end subroutine 
 
@@ -618,7 +618,7 @@ C $OpenAD$ END DECLS
 C       cp_arg_restore_real_five_tensor
         CALL TIMER_START('ArgRestore',myThid)
         cpsize = SIZEOF(x)
-        CALL CompressRd_real(x, cpsize) 
+        CALL CompressRd_real(x, cpsize, 5, shape(x)) 
 
         CALL TIMER_STOP('ArgRestore',myThid)
 #ifdef OAD_DEBUG_CP
@@ -671,7 +671,7 @@ C $OpenAD$ END DECLS
 C       cp_arg_store_real_six_tensor
         CALL TIMER_START('ArgStore',myThid)
         cpsize = SIZEOF(x)
-        CALL CompressWr_real(x, cpsize) 
+        CALL CompressWr_real(x, cpsize, 6, shape(x)) 
         CALL TIMER_STOP('ArgStore',myThid)
       end subroutine 
 
@@ -684,7 +684,7 @@ C $OpenAD$ END DECLS
 C       cp_arg_restore_real_six_tensor
         CALL TIMER_START('ArgRestore',myThid)
         cpsize = SIZEOF(x)
-        CALL CompressRd_real(x, cpsize) 
+        CALL CompressRd_real(x, cpsize, 6, shape(x)) 
 
         CALL TIMER_STOP('ArgRestore',myThid)
 #ifdef OAD_DEBUG_CP
@@ -738,7 +738,7 @@ C $OpenAD$ END DECLS
 C       cp_arg_store_integer_scalar
         CALL TIMER_START('ArgStore',myThid)
         cpsize = SIZEOF(i)
-        CALL CompressWr_integer(i, cpsize) 
+        CALL CompressWr_integer(i, cpsize, 0, shape(i)) 
         CALL TIMER_STOP('ArgStore',myThid)
       end subroutine 
 
@@ -751,7 +751,7 @@ C $OpenAD$ END DECLS
 C       cp_arg_restore_integer_scalar
         CALL TIMER_START('ArgRestore',myThid)
         cpsize = SIZEOF(i)
-        CALL CompressRd_integer(i, cpsize) 
+        CALL CompressRd_integer(i, cpsize, 0, shape(i)) 
 
         CALL TIMER_STOP('ArgRestore',myThid)
 #ifdef OAD_DEBUG_CP
@@ -772,7 +772,7 @@ C $OpenAD$ END DECLS
 C       cp_arg_store_integer_vector
         CALL TIMER_START('ArgStore',myThid)
         cpsize = SIZEOF(i)
-        CALL CompressWr_integer(i, cpsize) 
+        CALL CompressWr_integer(i, cpsize, 1, shape(i)) 
         CALL TIMER_STOP('ArgStore',myThid)
       end subroutine 
 
@@ -785,7 +785,7 @@ C $OpenAD$ END DECLS
 C       cp_arg_restore_integer_vector
         CALL TIMER_START('ArgRestore',myThid)
         cpsize = SIZEOF(i)
-        CALL CompressRd_integer(i, cpsize) 
+        CALL CompressRd_integer(i, cpsize, 1, shape(i)) 
 
         CALL TIMER_STOP('ArgRestore',myThid)
 #ifdef OAD_DEBUG_CP
@@ -806,7 +806,7 @@ C $OpenAD$ END DECLS
 C       cp_arg_store_integer_matrix
         CALL TIMER_START('ArgStore',myThid)
         cpsize = SIZEOF(i)
-        CALL CompressWr_integer(i, cpsize) 
+        CALL CompressWr_integer(i, cpsize, 2, shape(i)) 
         CALL TIMER_STOP('ArgStore',myThid)
       end subroutine 
 
@@ -819,7 +819,7 @@ C $OpenAD$ END DECLS
 C       cp_arg_restore_integer_matrix
         CALL TIMER_START('ArgRestore',myThid)
         cpsize = SIZEOF(i)
-        CALL CompressRd_integer(i, cpsize) 
+        CALL CompressRd_integer(i, cpsize, 2, shape(i)) 
 
         CALL TIMER_STOP('ArgRestore',myThid)
 #ifdef OAD_DEBUG_CP
@@ -840,7 +840,7 @@ C $OpenAD$ END DECLS
 C       cp_arg_store_integer_three_tensor
         CALL TIMER_START('ArgStore',myThid)
         cpsize = SIZEOF(i)
-        CALL CompressWr_integer(i, cpsize) 
+        CALL CompressWr_integer(i, cpsize, 3, shape(i)) 
         CALL TIMER_STOP('ArgStore',myThid)
       end subroutine 
 
@@ -853,7 +853,7 @@ C $OpenAD$ END DECLS
 C       cp_arg_restore_integer_three_tensor
         CALL TIMER_START('ArgRestore',myThid)
         cpsize = SIZEOF(i)
-        CALL CompressRd_integer(i, cpsize) 
+        CALL CompressRd_integer(i, cpsize, 3, shape(i)) 
 
         CALL TIMER_STOP('ArgRestore',myThid)
 #ifdef OAD_DEBUG_CP
@@ -874,7 +874,7 @@ C $OpenAD$ END DECLS
 C       cp_arg_store_integer_four_tensor
         CALL TIMER_START('ArgStore',myThid)
         cpsize = SIZEOF(i)
-        CALL CompressWr_integer(i, cpsize) 
+        CALL CompressWr_integer(i, cpsize, 4, shape(i)) 
         CALL TIMER_STOP('ArgStore',myThid)
       end subroutine 
 
@@ -887,7 +887,7 @@ C $OpenAD$ END DECLS
 C       cp_arg_restore_integer_four_tensor
         CALL TIMER_START('ArgRestore',myThid)
         cpsize = SIZEOF(i)
-        CALL CompressRd_integer(i, cpsize) 
+        CALL CompressRd_integer(i, cpsize, 4, shape(i)) 
 
         CALL TIMER_STOP('ArgRestore',myThid)
 #ifdef OAD_DEBUG_CP
@@ -908,7 +908,7 @@ C $OpenAD$ END DECLS
 C       cp_arg_store_integer_five_tensor
         CALL TIMER_START('ArgStore',myThid)
         cpsize = SIZEOF(i)
-        CALL CompressWr_integer(i, cpsize) 
+        CALL CompressWr_integer(i, cpsize, 5, shape(i)) 
         CALL TIMER_STOP('ArgStore',myThid)
       end subroutine 
 
@@ -921,7 +921,7 @@ C $OpenAD$ END DECLS
 C       cp_arg_restore_integer_five_tensor
         CALL TIMER_START('ArgRestore',myThid)
         cpsize = SIZEOF(i)
-        CALL CompressRd_integer(i, cpsize) 
+        CALL CompressRd_integer(i, cpsize, 5, shape(i)) 
 
         CALL TIMER_STOP('ArgRestore',myThid)
 #ifdef OAD_DEBUG_CP
@@ -942,7 +942,7 @@ C $OpenAD$ END DECLS
 C       cp_arg_store_integer_six_tensor
         CALL TIMER_START('ArgStore',myThid)
         cpsize = SIZEOF(i)
-        CALL CompressWr_integer(i, cpsize) 
+        CALL CompressWr_integer(i, cpsize, 6, shape(i)) 
         CALL TIMER_STOP('ArgStore',myThid)
       end subroutine 
 
@@ -955,7 +955,7 @@ C $OpenAD$ END DECLS
 C       cp_arg_restore_integer_six_tensor
         CALL TIMER_START('ArgRestore',myThid)
         cpsize = SIZEOF(i)
-        CALL CompressRd_integer(i, cpsize) 
+        CALL CompressRd_integer(i, cpsize, 6, shape(i)) 
 
         CALL TIMER_STOP('ArgRestore',myThid)
 #ifdef OAD_DEBUG_CP
@@ -977,7 +977,7 @@ C $OpenAD$ END DECLS
 C       cp_arg_store_bool_scalar
         CALL TIMER_START('ArgStore',myThid)
         cpsize = SIZEOF(b)
-        CALL CompressWr_bool(b, cpsize) 
+        CALL CompressWr_bool(b, cpsize, 0, shape(b)) 
         CALL TIMER_STOP('ArgStore',myThid)
       end subroutine 
 
@@ -990,7 +990,7 @@ C $OpenAD$ END DECLS
 C       cp_arg_restore_bool_scalar
         CALL TIMER_START('ArgRestore',myThid)
         cpsize = SIZEOF(b)
-        CALL CompressRd_bool(b, cpsize) 
+        CALL CompressRd_bool(b, cpsize, 0, shape(b)) 
 
         CALL TIMER_STOP('ArgRestore',myThid)
 #ifdef OAD_DEBUG_CP
@@ -1011,7 +1011,7 @@ C $OpenAD$ END DECLS
 C       cp_arg_store_bool_vector
         CALL TIMER_START('ArgStore',myThid)
         cpsize = SIZEOF(b)
-        CALL CompressWr_bool(b, cpsize) 
+        CALL CompressWr_bool(b, cpsize, 1, shape(b)) 
         CALL TIMER_STOP('ArgStore',myThid)
       end subroutine 
 
@@ -1024,7 +1024,7 @@ C $OpenAD$ END DECLS
 C       cp_arg_restore_bool_vector
         CALL TIMER_START('ArgRestore',myThid)
         cpsize = SIZEOF(b)
-        CALL CompressRd_bool(b, cpsize) 
+        CALL CompressRd_bool(b, cpsize, 1, shape(b)) 
 
         CALL TIMER_STOP('ArgRestore',myThid)
 #ifdef OAD_DEBUG_CP
@@ -1045,7 +1045,7 @@ C $OpenAD$ END DECLS
 C       cp_arg_store_bool_matrix
         CALL TIMER_START('ArgStore',myThid)
         cpsize = SIZEOF(b)
-        CALL CompressWr_bool(b, cpsize) 
+        CALL CompressWr_bool(b, cpsize, 2, shape(b)) 
         CALL TIMER_STOP('ArgStore',myThid)
       end subroutine 
 
@@ -1058,7 +1058,7 @@ C $OpenAD$ END DECLS
 C       cp_arg_restore_bool_matrix
         CALL TIMER_START('ArgRestore',myThid)
         cpsize = SIZEOF(b)
-        CALL CompressRd_bool(b, cpsize) 
+        CALL CompressRd_bool(b, cpsize, 2, shape(b)) 
 
         CALL TIMER_STOP('ArgRestore',myThid)
 #ifdef OAD_DEBUG_CP
@@ -1079,7 +1079,7 @@ C $OpenAD$ END DECLS
 C       cp_arg_store_bool_three_tensor
         CALL TIMER_START('ArgStore',myThid)
         cpsize = SIZEOF(b)
-        CALL CompressWr_bool(b, cpsize) 
+        CALL CompressWr_bool(b, cpsize, 3, shape(b)) 
         CALL TIMER_STOP('ArgStore',myThid)
       end subroutine 
 
@@ -1092,7 +1092,7 @@ C $OpenAD$ END DECLS
 C       cp_arg_restore_bool_three_tensor
         CALL TIMER_START('ArgRestore',myThid)
         cpsize = SIZEOF(b)
-        CALL CompressRd_bool(b, cpsize) 
+        CALL CompressRd_bool(b, cpsize, 3, shape(b)) 
 
         CALL TIMER_STOP('ArgRestore',myThid)
 #ifdef OAD_DEBUG_CP
@@ -1113,7 +1113,7 @@ C $OpenAD$ END DECLS
 C       cp_arg_store_bool_four_tensor
         CALL TIMER_START('ArgStore',myThid)
         cpsize = SIZEOF(b)
-        CALL CompressWr_bool(b, cpsize) 
+        CALL CompressWr_bool(b, cpsize, 4, shape(b)) 
         CALL TIMER_STOP('ArgStore',myThid)
       end subroutine 
 
@@ -1126,7 +1126,7 @@ C $OpenAD$ END DECLS
 C       cp_arg_restore_bool_four_tensor
         CALL TIMER_START('ArgRestore',myThid)
         cpsize = SIZEOF(b)
-        CALL CompressRd_bool(b, cpsize) 
+        CALL CompressRd_bool(b, cpsize, 4, shape(b)) 
 
         CALL TIMER_STOP('ArgRestore',myThid)
 #ifdef OAD_DEBUG_CP
@@ -1147,7 +1147,7 @@ C $OpenAD$ END DECLS
 C       cp_arg_store_bool_five_tensor
         CALL TIMER_START('ArgStore',myThid)
         cpsize = SIZEOF(b)
-        CALL CompressWr_bool(b, cpsize) 
+        CALL CompressWr_bool(b, cpsize, 5, shape(b)) 
         CALL TIMER_STOP('ArgStore',myThid)
       end subroutine 
 
@@ -1160,7 +1160,7 @@ C $OpenAD$ END DECLS
 C       cp_arg_restore_bool_five_tensor
         CALL TIMER_START('ArgRestore',myThid)
         cpsize = SIZEOF(b)
-        CALL CompressRd_bool(b, cpsize) 
+        CALL CompressRd_bool(b, cpsize, 5, shape(b)) 
 
         CALL TIMER_STOP('ArgRestore',myThid)
 #ifdef OAD_DEBUG_CP
@@ -1181,7 +1181,7 @@ C $OpenAD$ END DECLS
 C       cp_arg_store_bool_six_tensor
         CALL TIMER_START('ArgStore',myThid)
         cpsize = SIZEOF(b)
-        CALL CompressWr_bool(b, cpsize) 
+        CALL CompressWr_bool(b, cpsize, 6, shape(b)) 
         CALL TIMER_STOP('ArgStore',myThid)
       end subroutine 
 
@@ -1194,7 +1194,7 @@ C $OpenAD$ END DECLS
 C       cp_arg_restore_bool_six_tensor
         CALL TIMER_START('ArgRestore',myThid)
         cpsize = SIZEOF(b)
-        CALL CompressRd_bool(b, cpsize) 
+        CALL CompressRd_bool(b, cpsize, 6, shape(b)) 
 
         CALL TIMER_STOP('ArgRestore',myThid)
 #ifdef OAD_DEBUG_CP

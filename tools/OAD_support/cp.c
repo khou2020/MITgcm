@@ -62,104 +62,152 @@ void cpc_close_(){
     close(fd);
 }
 
-void compresswr(void *data, size_t size){
-    uint precision;
-    // input: (void* array, int nx, int ny, int nz, double tolerance)
+void compresswr_double(void *data, size_t size, int dim, int *shape){
+    zfp_stream *zfp;
+    zfp_type type = zfp_type_double;                          
+    zfp_field *field;
+    bitstream *stream;
+    size_t bufsize;  
+    size_t zfpsize;
+    void *buffer;
 
-    // initialize metadata for the 3D array a[nz][ny][nx]
-    zfp_type type = zfp_type_double;                          // array scalar type
-    zfp_field* field = zfp_field_1d(data, type, (unsigned int)size/8); // array metadata
-    //zfp_field* field = zfp_field_3d(array, type, nx, ny, nz); // array metadata
+    // array metadata
+    if (dim == 1){
+        field = zfp_field_1d(data, type, (unsigned int)(shape[0]) );
+    }
+    else if (dim == 2){
+        field = zfp_field_2d(data, type, (unsigned int)(shape[0]), (unsigned int)(shape[1]));
+    }
+    else{
+        int i;
+        unsigned int totalsize = 1;
 
-    // initialize metadata for a compressed stream
-    zfp_stream* zfp = zfp_stream_open(NULL);                  // compressed stream and parameters
-    zfp_stream_set_accuracy(zfp, 0.1);                  // set tolerance for fixed-accuracy mode
-    //precision = zfp_stream_set_precision(zfp, 16);             // alternative: fixed-precision mode
-    //zfp_stream_set_rate(zfp, rate, type, 3, 0);           // alternative: fixed-rate mode
-    //printf("Write %zu, precision %u\n", precision);
+        for(i = 2; i < dim; i++){
+            totalsize *= shape[i];
+        }
+        field = zfp_field_3d(data, type, (unsigned int)(shape[0]), (unsigned int)(shape[1]), totalsize);
+    }
+
+    // compressed stream and parameters
+    zfp = zfp_stream_open(NULL);   
+
+    // set tolerance for fixed-accuracy mode           
+    zfp_stream_set_accuracy(zfp, 0.1);                  
+    //precision = zfp_stream_set_precision(zfp, 16);           
+    //zfp_stream_set_rate(zfp, rate, type, 3, 0);       
 
     // allocate buffer for compressed data
-    size_t bufsize = zfp_stream_maximum_size(zfp, field);     // capacity of compressed buffer (conservative)
-    void* buffer = malloc(bufsize);                           // storage for compressed stream
-    printf("Write %zu -> (estimate) %zu\n", size, bufsize);
+    bufsize = zfp_stream_maximum_size(zfp, field);    
+    buffer = malloc(bufsize);                        
 
     // associate bit stream with allocated buffer
-    bitstream* stream = stream_open(buffer, bufsize);         // bit stream to compress to
-    zfp_stream_set_bit_stream(zfp, stream);                   // associate with compressed stream
-    zfp_stream_rewind(zfp);                                   // rewind stream to beginning
+    stream = stream_open(buffer, bufsize);      
+    zfp_stream_set_bit_stream(zfp, stream);                  
+    zfp_stream_rewind(zfp);                  
 
     // compress array
-    size_t zfpsize = zfp_compress(zfp, field);                // return value is byte size of compressed stream
+    zfpsize = zfp_compress(zfp, field);               
 
-    printf("Write %zu -> %zu\n", size, zfpsize);
     write(fd, &zfpsize, sizeof(zfpsize));
     write(fd, buffer, zfpsize);
+
+    printf("Write %zu -> %zu\n", size, zfpsize);
 }
 
-void compressrd(void *data, size_t size){
-    // input: (void* array, int nx, int ny, int nz, double tolerance)
+void compressrd_double(void *data, size_t size, int dim, int *shape){
+    zfp_stream *zfp;
+    int ret;
+    zfp_type type = zfp_type_double;                          
+    zfp_field *field;
+    bitstream *stream;
+    size_t bufsize;  
+    size_t zfpsize;
+    void *buffer;
 
-    // initialize metadata for the 3D array a[nz][ny][nx]
-    zfp_type type = zfp_type_double;                          // array scalar type
-    zfp_field* field = zfp_field_1d(data, type, (unsigned int)size/8); // array metadata
-    //zfp_field* field = zfp_field_3d(array, type, nx, ny, nz); // array metadata
+    // array metadata
+    if (dim == 1){
+        field = zfp_field_1d(data, type, (unsigned int)(shape[0]) );
+    }
+    else if (dim == 2){
+        field = zfp_field_2d(data, type, (unsigned int)(shape[0]), (unsigned int)(shape[1]));
+    }
+    else{
+        int i;
+        unsigned int totalsize = 1;
 
-    // initialize metadata for a compressed stream
-    zfp_stream* zfp = zfp_stream_open(NULL);                  // compressed stream and parameters
-    zfp_stream_set_accuracy(zfp, 0.1);                  // set tolerance for fixed-accuracy mode
-    //zfp_stream_set_precision(zfp, 16);             // alternative: fixed-precision mode
-    //zfp_stream_set_rate(zfp, rate, type, 3, 0);           // alternative: fixed-rate mode
+        for(i = 2; i < dim; i++){
+            totalsize *= shape[i];
+        }
+        field = zfp_field_3d(data, type, (unsigned int)(shape[0]), (unsigned int)(shape[1]), totalsize);
+    }
 
-    // allocate buffer for compressed data
-    size_t bufsize;
+    // compressed stream and parameters
+    zfp = zfp_stream_open(NULL);   
+
+    // set tolerance for fixed-accuracy mode           
+    zfp_stream_set_accuracy(zfp, 0.1);                  
+    //precision = zfp_stream_set_precision(zfp, 16);           
+    //zfp_stream_set_rate(zfp, rate, type, 3, 0);       
+
+    // allocate buffer for compressed data                     
     read(fd, &bufsize, sizeof(bufsize));
-    void* buffer = malloc(bufsize);                           // storage for compressed stream
+    buffer = malloc(bufsize);   
     read(fd, buffer, bufsize);
 
     // associate bit stream with allocated buffer
-    bitstream* stream = stream_open(buffer, bufsize);         // bit stream to compress to
-    zfp_stream_set_bit_stream(zfp, stream);                   // associate with compressed stream
-    zfp_stream_rewind(zfp);                                   // rewind stream to beginning
+    stream = stream_open(buffer, bufsize);      
+    zfp_stream_set_bit_stream(zfp, stream);                  
+    zfp_stream_rewind(zfp);                  
 
-    int ret = zfp_decompress(zfp, field);
+    ret = zfp_decompress(zfp, field);
 
     if (ret > 0) {
         printf("Read %zu -> %zu\n", bufsize, size);
     }
     else {
-        printf("Error: decompress fail\n");
+        printf("Decompress fail: addr: %llx, size: %zu\n", data, size);
     }
 }
 
-void compresswr_real_(double *R, int *size  ) {
+void compresswr_real_(double *R, int *size, int *dim, int *shape ) {
     //printf("Write %d bytes from %llx\n", *size, R);
-    compresswr((void*)R, (size_t)(*size));
+    if (*dim > 0){
+        compresswr_double((void*)R, (size_t)(*size), *dim, shape);
+    }
+    else{
+        write(fd, R, (size_t)(*size));
+    }
 }
 
-void compressrd_real_(double *D, int *size  ) {
+void compressrd_real_(double *D, int *size, int *dim, int *shape  ) {
     //printf("Read %d bytes to %llx\n", *size, D);
-    compressrd((void*)D, (size_t)(*size));
+    if (*dim > 0){
+        compressrd_double((void*)D, (size_t)(*size), *dim, shape);
+    }
+    else{
+        read(fd, D, (size_t)(*size));
+    }
 }
 
 
-void compresswr_integer_(int *R, int *size  ) {
-    printf("Write %d bytes from %llx\n", *size, R);
+void compresswr_integer_(int *R, int *size, int *dim, int *shape  ) {
+    //printf("Write %d bytes from %llx\n", *size, R);
     write(fd, R, (size_t)(*size));
     //compresswr((void*)R, (size_t)(*size));
 }
 
-void compressrd_integer_(int *D, int *size  ) {
-    printf("Read %d bytes to %llx\n", *size, D);
+void compressrd_integer_(int *D, int *size, int *dim, int *shape  ) {
+    //printf("Read %d bytes to %llx\n", *size, D);
     read(fd, D, (size_t)(*size));
 }
 
 
-void compresswr_bool_(int *R, int *size  ) {
+void compresswr_bool_(int *R, int *size, int *dim, int *shape  ) {
     //printf("Write %d bytes from %llx\n", *size, R);
     write(fd, R, (size_t)(*size));
 }
 
-void compressrd_bool_(int *D, int *size  ) {
+void compressrd_bool_(int *D, int *size, int *dim, int *shape  ) {
     //printf("Read %d bytes to %llx\n", *size, D);
     read(fd, D, (size_t)(*size));
 }

@@ -27,7 +27,7 @@ C       cp_arg_store_$2_$3$4
         CALL TIMER_START('ArgStore',myThid)
 ifelse($7, `', `dnl
         cpsize = SIZEOF($8)
-        CALL CompressWr_$2($8, cpsize) 
+        CALL CompressWr_$2($8, cpsize, $6, shape($8)) 
 ', `dnl
         CALL CompressWrC_$2_$6($8$7) 
 ')dnl
@@ -51,7 +51,7 @@ C       cp_arg_restore_$2_$3$4
         CALL TIMER_START('ArgRestore',myThid)
 ifelse($7, `', `dnl        
         cpsize = SIZEOF($8)
-        CALL CompressRd_$2($8, cpsize) 
+        CALL CompressRd_$2($8, cpsize, $6, shape($8)) 
 
 ', `dnl
         CALL CompressRdC_$2_$6($8$7) 

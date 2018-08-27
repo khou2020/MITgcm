@@ -18,7 +18,7 @@ define(`CMP_CP',changequote(`[', `]')dnl
         integer :: cpsize
         CONCAT(`$3', ifelse($2, `0', `', ``, dimension(forloop(`i', `1', $2, `ifelse(i, `1', `:', `,:')'))'')) :: x
         cpsize = SIZEOF(x)
-        CALL CompressRd_$1(x, cpsize) 
+        CALL CompressRd_$1(x, cpsize, $2, shape(x)) 
       end subroutine 
 
       subroutine CompressWrC_$1_$2(x)
@@ -26,7 +26,7 @@ define(`CMP_CP',changequote(`[', `]')dnl
         integer :: cpsize
         CONCAT(`$3', ifelse($2, `0', `', ``, dimension(forloop(`i', `1', $2, `ifelse(i, `1', `:', `,:')'))'')) :: x
         cpsize = SIZEOF(x)
-        CALL CompressWr_$1(x, cpsize) 
+        CALL CompressWr_$1(x, cpsize, $2, shape(x)) 
       end subroutine 
 
 ]changequote([`], [']))dnl
