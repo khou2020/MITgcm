@@ -2963,7 +2963,7 @@ LINK = ${LINK} ${LDADD}
 # Defines for CPP
 DEFINES = ${DEFINES}
 # Includes for CPP
-INCLUDES = ${INCLUDES}
+INCLUDES = ${INCLUDES} -I${ZFPPATH}/include
 # default CPP includes for makedepend
 CPPINCLUDES = ${CPPINCLUDES}
 # Flags for KPP
@@ -2982,7 +2982,7 @@ CFLAGS = ${CFLAGS}
 NOOPTFILES = ${NOOPTFILES}
 NOOPTFLAGS = ${NOOPTFLAGS}
 # Flags and libraries needed for linking
-LIBS = ${LIBS}
+LIBS = ${LIBS} -L${ZFPPATH}/lib -lzfp
 # Name of the makefile
 MAKEFILE = ${MAKEFILE}
 # Name of the make program
