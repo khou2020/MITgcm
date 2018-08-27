@@ -111,7 +111,7 @@ void compresswr_double(void *data, size_t size, int dim, int *shape){
     write(fd, &zfpsize, sizeof(zfpsize));
     write(fd, buffer, zfpsize);
 
-    printf("Write %zu -> %zu\n", size, zfpsize);
+    //printf("Write %zu -> %zu\n", size, zfpsize);
 }
 
 void compressrd_double(void *data, size_t size, int dim, int *shape){
@@ -162,6 +162,113 @@ void compressrd_double(void *data, size_t size, int dim, int *shape){
     ret = zfp_decompress(zfp, field);
 
     if (ret > 0) {
+        //printf("Read %zu -> %zu\n", bufsize, size);
+    }
+    else {
+        printf("Decompress fail: addr: %llx, size: %zu\n", data, size);
+    }
+}
+
+void compresswr_int(void *data, size_t size, int dim, int *shape){
+    zfp_stream *zfp;
+    zfp_type type = zfp_type_int32;                          
+    zfp_field *field;
+    bitstream *stream;
+    size_t bufsize;  
+    size_t zfpsize;
+    void *buffer;
+
+    // array metadata
+    if (dim == 1){
+        field = zfp_field_1d(data, type, (unsigned int)(shape[0]) );
+    }
+    else if (dim == 2){
+        field = zfp_field_2d(data, type, (unsigned int)(shape[0]), (unsigned int)(shape[1]));
+    }
+    else{
+        int i;
+        unsigned int totalsize = 1;
+
+        for(i = 2; i < dim; i++){
+            totalsize *= shape[i];
+        }
+        field = zfp_field_3d(data, type, (unsigned int)(shape[0]), (unsigned int)(shape[1]), totalsize);
+    }
+
+    // compressed stream and parameters
+    zfp = zfp_stream_open(NULL);   
+
+    // set tolerance for fixed-accuracy mode           
+    zfp_stream_set_accuracy(zfp, 0);                  
+    //precision = zfp_stream_set_precision(zfp, 16);           
+    //zfp_stream_set_rate(zfp, rate, type, 3, 0);       
+
+    // allocate buffer for compressed data
+    bufsize = zfp_stream_maximum_size(zfp, field);    
+    buffer = malloc(bufsize);                        
+
+    // associate bit stream with allocated buffer
+    stream = stream_open(buffer, bufsize);      
+    zfp_stream_set_bit_stream(zfp, stream);                  
+    zfp_stream_rewind(zfp);                  
+
+    // compress array
+    zfpsize = zfp_compress(zfp, field);               
+
+    write(fd, &zfpsize, sizeof(zfpsize));
+    write(fd, buffer, zfpsize);
+
+    printf("Write %zu -> %zu\n", size, zfpsize);
+}
+
+void compressrd_int(void *data, size_t size, int dim, int *shape){
+    zfp_stream *zfp;
+    int ret;
+    zfp_type type = zfp_type_int32;                          
+    zfp_field *field;
+    bitstream *stream;
+    size_t bufsize;  
+    size_t zfpsize;
+    void *buffer;
+
+    // array metadata
+    if (dim == 1){
+        field = zfp_field_1d(data, type, (unsigned int)(shape[0]) );
+    }
+    else if (dim == 2){
+        field = zfp_field_2d(data, type, (unsigned int)(shape[0]), (unsigned int)(shape[1]));
+    }
+    else{
+        int i;
+        unsigned int totalsize = 1;
+
+        for(i = 2; i < dim; i++){
+            totalsize *= shape[i];
+        }
+        field = zfp_field_3d(data, type, (unsigned int)(shape[0]), (unsigned int)(shape[1]), totalsize);
+    }
+
+    // compressed stream and parameters
+    zfp = zfp_stream_open(NULL);   
+
+    // set tolerance for fixed-accuracy mode           
+    zfp_stream_set_accuracy(zfp, 0);                  
+    //precision = zfp_stream_set_precision(zfp, 16);           
+    //zfp_stream_set_rate(zfp, rate, type, 3, 0);       
+
+    // allocate buffer for compressed data                     
+    read(fd, &bufsize, sizeof(bufsize));
+    buffer = malloc(bufsize);   
+    read(fd, buffer, bufsize);
+
+    // associate bit stream with allocated buffer
+    stream = stream_open(buffer, bufsize);      
+    zfp_stream_set_bit_stream(zfp, stream);                  
+    zfp_stream_rewind(zfp);                  
+
+    ret = zfp_decompress(zfp, field);
+
+    if (ret > 0) {
         printf("Read %zu -> %zu\n", bufsize, size);
     }
     else {
@@ -192,24 +299,49 @@ void compressrd_real_(double *D, int *size, int *dim, int *shape  ) {
 
 void compresswr_integer_(int *R, int *size, int *dim, int *shape  ) {
     //printf("Write %d bytes from %llx\n", *size, R);
-    write(fd, R, (size_t)(*size));
+    //write(fd, R, (size_t)(*size));
     //compresswr((void*)R, (size_t)(*size));
+    if (*dim > 0){
+        compresswr_int((void*)R, (size_t)(*size), *dim, shape);
+    }
+    else{
+        write(fd, R, (size_t)(*size));
+    }
 }
 
 void compressrd_integer_(int *D, int *size, int *dim, int *shape  ) {
     //printf("Read %d bytes to %llx\n", *size, D);
-    read(fd, D, (size_t)(*size));
+    //read(fd, D, (size_t)(*size));
+    if (*dim > 0){
+        compressrd_int((void*)D, (size_t)(*size), *dim, shape);
+    }
+    else{
+        read(fd, D, (size_t)(*size));
+    }
 }
 
 
 void compresswr_bool_(int *R, int *size, int *dim, int *shape  ) {
     //printf("Write %d bytes from %llx\n", *size, R);
-    write(fd, R, (size_t)(*size));
+    //write(fd, R, (size_t)(*size));
+    //compresswr((void*)R, (size_t)(*size));
+    if (*dim > 0){
+        compresswr_int((void*)R, (size_t)(*size), *dim, shape);
+    }
+    else{
+        write(fd, R, (size_t)(*size));
+    }
 }
 
 void compressrd_bool_(int *D, int *size, int *dim, int *shape  ) {
     //printf("Read %d bytes to %llx\n", *size, D);
-    read(fd, D, (size_t)(*size));
+    //read(fd, D, (size_t)(*size));
+    if (*dim > 0){
+        compressrd_int((void*)D, (size_t)(*size), *dim, shape);
+    }
+    else{
+        read(fd, D, (size_t)(*size));
+    }
 }
 
 
