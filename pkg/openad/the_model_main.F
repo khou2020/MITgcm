@@ -666,5 +666,7 @@ C--   Check threads synchronization :
       IF (debugMode) CALL DEBUG_LEAVE('THE_MODEL_MAIN',myThid)
 #endif
 
+      CALL cpc_profile()
+      
       RETURN
       END

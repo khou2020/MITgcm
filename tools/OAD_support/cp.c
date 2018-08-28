@@ -9,9 +9,16 @@
 #include <mpi.h>
 #endif
 #include "zfp.h"
+#include <time.h>
 
 static int cp_file_num = 0;
 int fd;
+int wr;
+
+static double compress_time, compress_time_old;
+static double decompress_time, decompress_time_old;
+static double wr_time, wr_time_old;
+static double rd_time, rd_time_old;
 
 void cp_wr_open_(int *num){
     int rank;
@@ -34,6 +41,8 @@ void cp_wr_open_(int *num){
     if (num == NULL){
         cp_file_num++;
     }
+
+    wr = 1;
 }
 
 void cp_rd_open_(int *num){
@@ -56,13 +65,55 @@ void cp_rd_open_(int *num){
     sprintf(fname, "oad_cp.%03d.%05d", rank, cp_file_num);
 
     fd = open(fname, O_CREAT | O_RDONLY, 0644);
+
+    wr = 0;
 }
 
 void cpc_close_(){
+    int rank;
+    char fname[PATH_MAX];
+    struct stat st;
+
     close(fd);
+    
+    if (wr){
+#ifdef ALLOW_USE_MPI
+        MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+#else
+        rank = 0;
+#endif
+        sprintf(fname, "oad_cp.%03d.%05d", rank, cp_file_num);
+        stat(fname, &st);
+        printf("#%%$: CP_Size[%d]: %lld\n", cp_file_num, (long long)st.st_size);
+
+        printf("#%%$: CP_Com_Time[%d]: %lf\n", cp_file_num, compress_time - compress_time_old);
+        printf("#%%$: CP_Wr_Time[%d]: %lf\n", cp_file_num, wr_time - wr_time_old); 
+
+        compress_time_old = compress_time;
+        wr_time_old = wr_time;
+    }
+    else{
+        printf("#%%$: CP_Decom_Time[%d]: %lf\n", cp_file_num, decompress_time - decompress_time_old);
+        printf("#%%$: CP_Rd_Time[%d]: %lf\n", cp_file_num, rd_time - rd_time_old); 
+
+        decompress_time_old = decompress_time;
+        rd_time_old = rd_time;
+    }
 }
 
-void compresswr_double(void *data, size_t size, int dim, int *shape){
+void cpc_profile_(){
+    printf("#%%$: CP_Com_Time_All: %lf\n", compress_time);
+    printf("#%%$: CP_Wr_Time_All: %lf\n", wr_time); 
+    printf("#%%$: CP_Decom_Time_All: %lf\n", decompress_time);
+    printf("#%%$: CP_Rd_Time_All: %lf\n", rd_time); 
+}
+
+
+
+
+
+
+void compresswr_real(void *data, size_t size, int dim, int *shape){
     zfp_stream *zfp;
     zfp_type type = zfp_type_double;                          
     zfp_field *field;
@@ -70,6 +121,9 @@ void compresswr_double(void *data, size_t size, int dim, int *shape){
     size_t bufsize;  
     size_t zfpsize;
     void *buffer;
+    clock_t t1, t2, t3;
+
+    t1 = clock();
 
     // array metadata
     if (dim == 1){
@@ -92,9 +146,7 @@ void compresswr_double(void *data, size_t size, int dim, int *shape){
     zfp = zfp_stream_open(NULL);   
 
     // set tolerance for fixed-accuracy mode           
-    zfp_stream_set_accuracy(zfp, 0.1);                  
-    //precision = zfp_stream_set_precision(zfp, 16);           
-    //zfp_stream_set_rate(zfp, rate, type, 3, 0);       
+    zfp_stream_set_accuracy(zfp, 0.000001);                     
 
     // allocate buffer for compressed data
     bufsize = zfp_stream_maximum_size(zfp, field);    
@@ -108,13 +160,22 @@ void compresswr_double(void *data, size_t size, int dim, int *shape){
     // compress array
     zfpsize = zfp_compress(zfp, field);               
 
+    t2 = clock();
+
     write(fd, &zfpsize, sizeof(zfpsize));
     write(fd, buffer, zfpsize);
+
+    t3 = clock();
+
+    free(buffer);
+
+    compress_time += (double)(t2 - t1) / CLOCKS_PER_SEC;
+    wr_time += (double)(t3 - t2) / CLOCKS_PER_SEC;
 
     //printf("Write %zu -> %zu\n", size, zfpsize);
 }
 
-void compressrd_double(void *data, size_t size, int dim, int *shape){
+void compressrd_real(void *data, size_t size, int dim, int *shape){
     zfp_stream *zfp;
     int ret;
     zfp_type type = zfp_type_double;                          
@@ -123,6 +184,16 @@ void compressrd_double(void *data, size_t size, int dim, int *shape){
     size_t bufsize;  
     size_t zfpsize;
     void *buffer;
+    clock_t t1, t2, t3;
+    
+    t1 = clock();
+
+    // allocate buffer for compressed data                     
+    read(fd, &bufsize, sizeof(bufsize));
+    buffer = malloc(bufsize);   
+    read(fd, buffer, bufsize);
+
+    t2 = clock();
 
     // array metadata
     if (dim == 1){
@@ -145,14 +216,8 @@ void compressrd_double(void *data, size_t size, int dim, int *shape){
     zfp = zfp_stream_open(NULL);   
 
     // set tolerance for fixed-accuracy mode           
-    zfp_stream_set_accuracy(zfp, 0.1);                  
-    //precision = zfp_stream_set_precision(zfp, 16);           
-    //zfp_stream_set_rate(zfp, rate, type, 3, 0);       
+    zfp_stream_set_accuracy(zfp, 0.000001);                      
 
-    // allocate buffer for compressed data                     
-    read(fd, &bufsize, sizeof(bufsize));
-    buffer = malloc(bufsize);   
-    read(fd, buffer, bufsize);
 
     // associate bit stream with allocated buffer
     stream = stream_open(buffer, bufsize);      
@@ -161,13 +226,21 @@ void compressrd_double(void *data, size_t size, int dim, int *shape){
 
     ret = zfp_decompress(zfp, field);
 
-    if (ret > 0) {
-        //printf("Read %zu -> %zu\n", bufsize, size);
+    t3 = clock();
+
+    free(buffer);
+
+    decompress_time += (double)(t3 - t2) / CLOCKS_PER_SEC;
+    rd_time += (double)(t2 - t1) / CLOCKS_PER_SEC;
+    
+    if (ret < 0) {
+        printf("Decompress fail: addr: %llx, size: %zu\n", data, size);   
     }
     else {
-        printf("Decompress fail: addr: %llx, size: %zu\n", data, size);
+        //printf("Read %zu -> %zu\n", bufsize, size);
     }
 }
+
 
 void compresswr_int(void *data, size_t size, int dim, int *shape){
     zfp_stream *zfp;
@@ -177,6 +250,9 @@ void compresswr_int(void *data, size_t size, int dim, int *shape){
     size_t bufsize;  
     size_t zfpsize;
     void *buffer;
+    clock_t t1, t2, t3;
+
+    t1 = clock();
 
     // array metadata
     if (dim == 1){
@@ -199,9 +275,7 @@ void compresswr_int(void *data, size_t size, int dim, int *shape){
     zfp = zfp_stream_open(NULL);   
 
     // set tolerance for fixed-accuracy mode           
-    zfp_stream_set_accuracy(zfp, 0);                  
-    //precision = zfp_stream_set_precision(zfp, 16);           
-    //zfp_stream_set_rate(zfp, rate, type, 3, 0);       
+    zfp_stream_set_accuracy(zfp, 0);                     
 
     // allocate buffer for compressed data
     bufsize = zfp_stream_maximum_size(zfp, field);    
@@ -215,10 +289,19 @@ void compresswr_int(void *data, size_t size, int dim, int *shape){
     // compress array
     zfpsize = zfp_compress(zfp, field);               
 
+    t2 = clock();
+
     write(fd, &zfpsize, sizeof(zfpsize));
     write(fd, buffer, zfpsize);
 
-    printf("Write %zu -> %zu\n", size, zfpsize);
+    t3 = clock();
+
+    free(buffer);
+
+    compress_time += (double)(t2 - t1) / CLOCKS_PER_SEC;
+    wr_time += (double)(t3 - t2) / CLOCKS_PER_SEC;
+
+    //printf("Write %zu -> %zu\n", size, zfpsize);
 }
 
 void compressrd_int(void *data, size_t size, int dim, int *shape){
@@ -230,6 +313,16 @@ void compressrd_int(void *data, size_t size, int dim, int *shape){
     size_t bufsize;  
     size_t zfpsize;
     void *buffer;
+    clock_t t1, t2, t3;
+    
+    t1 = clock();
+
+    // allocate buffer for compressed data                     
+    read(fd, &bufsize, sizeof(bufsize));
+    buffer = malloc(bufsize);   
+    read(fd, buffer, bufsize);
+
+    t2 = clock();
 
     // array metadata
     if (dim == 1){
@@ -252,14 +345,8 @@ void compressrd_int(void *data, size_t size, int dim, int *shape){
     zfp = zfp_stream_open(NULL);   
 
     // set tolerance for fixed-accuracy mode           
-    zfp_stream_set_accuracy(zfp, 0);                  
-    //precision = zfp_stream_set_precision(zfp, 16);           
-    //zfp_stream_set_rate(zfp, rate, type, 3, 0);       
+    zfp_stream_set_accuracy(zfp, 0);                      
 
-    // allocate buffer for compressed data                     
-    read(fd, &bufsize, sizeof(bufsize));
-    buffer = malloc(bufsize);   
-    read(fd, buffer, bufsize);
 
     // associate bit stream with allocated buffer
     stream = stream_open(buffer, bufsize);      
@@ -268,90 +355,119 @@ void compressrd_int(void *data, size_t size, int dim, int *shape){
 
     ret = zfp_decompress(zfp, field);
 
-    if (ret > 0) {
-        printf("Read %zu -> %zu\n", bufsize, size);
+    t3 = clock();
+
+    free(buffer);
+
+    decompress_time += (double)(t3 - t2) / CLOCKS_PER_SEC;
+    rd_time += (double)(t2 - t1) / CLOCKS_PER_SEC;
+    
+    if (ret < 0) {
+        printf("Decompress fail: addr: %llx, size: %zu\n", data, size);   
     }
     else {
-        printf("Decompress fail: addr: %llx, size: %zu\n", data, size);
+        //printf("Read %zu -> %zu\n", bufsize, size);
     }
 }
 
+
+
+
 void compresswr_real_(double *R, int *size, int *dim, int *shape ) {
-    //printf("Write %d bytes from %llx\n", *size, R);
     if (*dim > 0){
-        compresswr_double((void*)R, (size_t)(*size), *dim, shape);
+        compresswr_real((void*)R, (size_t)(*size), *dim, shape);
     }
     else{
+        clock_t t1, t2;
+        t1 = clock();
         write(fd, R, (size_t)(*size));
+        t2 = clock();
+        wr_time += (double)(t2 - t1) / CLOCKS_PER_SEC;
     }
 }
 
 void compressrd_real_(double *D, int *size, int *dim, int *shape  ) {
-    //printf("Read %d bytes to %llx\n", *size, D);
     if (*dim > 0){
-        compressrd_double((void*)D, (size_t)(*size), *dim, shape);
+        compressrd_real((void*)D, (size_t)(*size), *dim, shape);
     }
     else{
+        clock_t t1, t2;
+        t1 = clock();
         read(fd, D, (size_t)(*size));
+        t2 = clock();
+        rd_time += (double)(t2 - t1) / CLOCKS_PER_SEC;
     }
 }
 
 
-void compresswr_integer_(int *R, int *size, int *dim, int *shape  ) {
-    //printf("Write %d bytes from %llx\n", *size, R);
-    //write(fd, R, (size_t)(*size));
-    //compresswr((void*)R, (size_t)(*size));
+void compresswr_integer_(int *R, int *size, int *dim, int *shape ) {
     if (*dim > 0){
         compresswr_int((void*)R, (size_t)(*size), *dim, shape);
     }
     else{
+        clock_t t1, t2;
+        t1 = clock();
         write(fd, R, (size_t)(*size));
+        t2 = clock();
+        wr_time += (double)(t2 - t1) / CLOCKS_PER_SEC;
     }
 }
 
 void compressrd_integer_(int *D, int *size, int *dim, int *shape  ) {
-    //printf("Read %d bytes to %llx\n", *size, D);
-    //read(fd, D, (size_t)(*size));
     if (*dim > 0){
         compressrd_int((void*)D, (size_t)(*size), *dim, shape);
     }
     else{
+        clock_t t1, t2;
+        t1 = clock();
         read(fd, D, (size_t)(*size));
+        t2 = clock();
+        rd_time += (double)(t2 - t1) / CLOCKS_PER_SEC;
     }
 }
 
 
-void compresswr_bool_(int *R, int *size, int *dim, int *shape  ) {
-    //printf("Write %d bytes from %llx\n", *size, R);
-    //write(fd, R, (size_t)(*size));
-    //compresswr((void*)R, (size_t)(*size));
+void compresswr_bool_(int *R, int *size, int *dim, int *shape ) {
     if (*dim > 0){
         compresswr_int((void*)R, (size_t)(*size), *dim, shape);
     }
     else{
+        clock_t t1, t2;
+        t1 = clock();
         write(fd, R, (size_t)(*size));
+        t2 = clock();
+        wr_time += (double)(t2 - t1) / CLOCKS_PER_SEC;
     }
 }
 
 void compressrd_bool_(int *D, int *size, int *dim, int *shape  ) {
-    //printf("Read %d bytes to %llx\n", *size, D);
-    //read(fd, D, (size_t)(*size));
     if (*dim > 0){
         compressrd_int((void*)D, (size_t)(*size), *dim, shape);
     }
     else{
+        clock_t t1, t2;
+        t1 = clock();
         read(fd, D, (size_t)(*size));
+        t2 = clock();
+        rd_time += (double)(t2 - t1) / CLOCKS_PER_SEC;
     }
 }
 
 
+
+
 void compresswr_string_(char *R, int *size , long l ) {
-    //printf("Write %d bytes from %llx\n", *size, R);
-    write(fd, R, (size_t)(*size));
+        clock_t t1, t2;
+        t1 = clock();
+        write(fd, R, (size_t)(*size));
+        t2 = clock();
+        wr_time += (double)(t2 - t1) / CLOCKS_PER_SEC;
 }
 
 void compressrd_string_(char *D, int *size , long l ) {
-    //printf("Read %d bytes to %llx\n", *size, D);
+    clock_t t1, t2;
+    t1 = clock();
     read(fd, D, (size_t)(*size));
+    t2 = clock();
+    rd_time += (double)(t2 - t1) / CLOCKS_PER_SEC;
 }
-
