@@ -11,7 +11,8 @@
 #include "zfp.h"
 
 static int cp_file_num = 0;
-int fd;
+//int fd;
+FILE *fh;
 
 void cp_wr_open_(int *num){
     int rank;
@@ -28,8 +29,8 @@ void cp_wr_open_(int *num){
 #endif
 
     sprintf(fname, "oad_cp.%03d.%05d", rank, cp_file_num);
-
-    fd = open(fname, O_CREAT | O_WRONLY, 0644);
+    fh = fopen (fname, "wb");
+    //fd = open(fname, O_CREAT | O_WRONLY, 0644);
 
     if (num == NULL){
         cp_file_num++;
@@ -55,11 +56,13 @@ void cp_rd_open_(int *num){
 
     sprintf(fname, "oad_cp.%03d.%05d", rank, cp_file_num);
 
-    fd = open(fname, O_CREAT | O_RDONLY, 0644);
+    fh = fopen (fname, "rb");
+    //fd = open(fname, O_CREAT | O_RDONLY, 0644);
 }
 
 void cpc_close_(){
-    close(fd);
+    //close(fd);
+    fclose(fh);
 }
 
 void compresswr_double(void *data, size_t size, int dim, int *shape){
@@ -108,10 +111,12 @@ void compresswr_double(void *data, size_t size, int dim, int *shape){
     // compress array
     zfpsize = zfp_compress(zfp, field);               
 
-    write(fd, &zfpsize, sizeof(zfpsize));
-    write(fd, buffer, zfpsize);
+    fwrite(&zfpsize, sizeof(zfpsize), 1, fh);
+    fwrite(buffer, zfpsize, 1, fh);
+    //write(fd, &zfpsize, sizeof(zfpsize));
+    //write(fd, buffer, zfpsize);
 
-    //printf("Write %zu -> %zu\n", size, zfpsize);
+    printf("Write %zu -> %zu\n", size, zfpsize);
 }
 
 void compressrd_double(void *data, size_t size, int dim, int *shape){
@@ -150,9 +155,11 @@ void compressrd_double(void *data, size_t size, int dim, int *shape){
     //zfp_stream_set_rate(zfp, rate, type, 3, 0);       
 
     // allocate buffer for compressed data                     
-    read(fd, &bufsize, sizeof(bufsize));
+    fread(&bufsize, sizeof(bufsize), 1, fh);
+    //read(fd, &bufsize, sizeof(bufsize));
     buffer = malloc(bufsize);   
-    read(fd, buffer, bufsize);
+    fread(buffer, bufsize, 1, fh);
+    //read(fd, buffer, bufsize);
 
     // associate bit stream with allocated buffer
     stream = stream_open(buffer, bufsize);      
@@ -162,7 +169,7 @@ void compressrd_double(void *data, size_t size, int dim, int *shape){
     ret = zfp_decompress(zfp, field);
 
     if (ret > 0) {
-        //printf("Read %zu -> %zu\n", bufsize, size);
+        printf("Read %zu -> %zu\n", bufsize, size);
     }
     else {
         printf("Decompress fail: addr: %llx, size: %zu\n", data, size);
@@ -215,8 +222,10 @@ void compresswr_int(void *data, size_t size, int dim, int *shape){
     // compress array
     zfpsize = zfp_compress(zfp, field);               
 
-    write(fd, &zfpsize, sizeof(zfpsize));
-    write(fd, buffer, zfpsize);
+    fwrite(&zfpsize, sizeof(zfpsize), 1, fh);
+    fwrite(buffer, zfpsize, 1, fh);
+    //write(fd, &zfpsize, sizeof(zfpsize));
+    //write(fd, buffer, zfpsize);
 
     printf("Write %zu -> %zu\n", size, zfpsize);
 }
@@ -257,9 +266,11 @@ void compressrd_int(void *data, size_t size, int dim, int *shape){
     //zfp_stream_set_rate(zfp, rate, type, 3, 0);       
 
     // allocate buffer for compressed data                     
-    read(fd, &bufsize, sizeof(bufsize));
+    fread(&bufsize, sizeof(bufsize), 1, fh);
+    //read(fd, &bufsize, sizeof(bufsize));
     buffer = malloc(bufsize);   
-    read(fd, buffer, bufsize);
+    fread(buffer, bufsize, 1, fh);
+    //read(fd, buffer, bufsize);
 
     // associate bit stream with allocated buffer
     stream = stream_open(buffer, bufsize);      
@@ -282,7 +293,8 @@ void compresswr_real_(double *R, int *size, int *dim, int *shape ) {
         compresswr_double((void*)R, (size_t)(*size), *dim, shape);
     }
     else{
-        write(fd, R, (size_t)(*size));
+        fwrite(R, (size_t)(*size), 1, fh);
+        //write(fd, R, (size_t)(*size));
     }
 }
 
@@ -292,7 +304,8 @@ void compressrd_real_(double *D, int *size, int *dim, int *shape  ) {
         compressrd_double((void*)D, (size_t)(*size), *dim, shape);
     }
     else{
-        read(fd, D, (size_t)(*size));
+        fread(D, (size_t)(*size), 1, fh);
+        //read(fd, D, (size_t)(*size));
     }
 }
 
@@ -305,7 +318,8 @@ void compresswr_integer_(int *R, int *size, int *dim, int *shape  ) {
         compresswr_int((void*)R, (size_t)(*size), *dim, shape);
     }
     else{
-        write(fd, R, (size_t)(*size));
+        fwrite(R, (size_t)(*size), 1, fh);
+        //write(fd, R, (size_t)(*size));
     }
 }
 
@@ -316,7 +330,8 @@ void compressrd_integer_(int *D, int *size, int *dim, int *shape  ) {
         compressrd_int((void*)D, (size_t)(*size), *dim, shape);
     }
     else{
-        read(fd, D, (size_t)(*size));
+        fread(D, (size_t)(*size), 1, fh);
+        //read(fd, D, (size_t)(*size));
     }
 }
 
@@ -329,7 +344,8 @@ void compresswr_bool_(int *R, int *size, int *dim, int *shape  ) {
         compresswr_int((void*)R, (size_t)(*size), *dim, shape);
     }
     else{
-        write(fd, R, (size_t)(*size));
+        fwrite(R, (size_t)(*size), 1, fh);
+        //write(fd, R, (size_t)(*size));
     }
 }
 
@@ -340,18 +356,21 @@ void compressrd_bool_(int *D, int *size, int *dim, int *shape  ) {
         compressrd_int((void*)D, (size_t)(*size), *dim, shape);
     }
     else{
-        read(fd, D, (size_t)(*size));
+        fread(D, (size_t)(*size), 1, fh);
+        //read(fd, D, (size_t)(*size));
     }
 }
 
 
 void compresswr_string_(char *R, int *size , long l ) {
     //printf("Write %d bytes from %llx\n", *size, R);
-    write(fd, R, (size_t)(*size));
+    fwrite(R, (size_t)(*size), 1, fh);
+    //write(fd, R, (size_t)(*size));
 }
 
 void compressrd_string_(char *D, int *size , long l ) {
     //printf("Read %d bytes to %llx\n", *size, D);
-    read(fd, D, (size_t)(*size));
+    fread(D, (size_t)(*size), 1, fh);
+    //read(fd, D, (size_t)(*size));
 }
 
