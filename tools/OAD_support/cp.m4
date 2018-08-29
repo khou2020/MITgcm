@@ -15,14 +15,21 @@ dnl
 #include <mpi.h>
 #endif
 #include "zlib.h"
+#include <time.h>
 
 #define BSIZE 1048576
 
 static int cp_file_num = 0;
 int fd;
+int wr;
 int dsize;
 size_t bsize;
 char *buffer;
+
+static double compress_time, compress_time_old;
+static double decompress_time, decompress_time_old;
+static double wr_time, wr_time_old;
+static double rd_time, rd_time_old;
 
 void buffer_init(){
     bsize = BSIZE;
@@ -66,6 +73,8 @@ void cp_wr_open_(int *num){
     }
 
     buffer_init();
+
+    wr = 1;
 }
 
 void cp_rd_open_(int *num){
@@ -92,17 +101,57 @@ void cp_rd_open_(int *num){
     buffer_init();
 
     read(fd, &dsize, sizeof(dsize));
+
+     wr = 0;
 }
 
 void cpc_close_(){
-    close(fd);
+    int rank;
+    char fname[PATH_MAX];
+    struct stat st;
 
+    close(fd);
+    
     buffer_free();
+
+    if (wr){
+#ifdef ALLOW_USE_MPI
+        MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+#else
+        rank = 0;
+#endif
+        sprintf(fname, "oad_cp.%03d.%05d", rank, cp_file_num);
+        stat(fname, &st);
+        printf("#%%$: CP_Size[%d]: %lld\n", cp_file_num, (long long)st.st_size);
+
+        printf("#%%$: CP_Com_Time[%d]: %lf\n", cp_file_num, compress_time - compress_time_old);
+        printf("#%%$: CP_Wr_Time[%d]: %lf\n", cp_file_num, wr_time - wr_time_old); 
+
+        compress_time_old = compress_time;
+        wr_time_old = wr_time;
+    }
+    else{
+        printf("#%%$: CP_Decom_Time[%d]: %lf\n", cp_file_num, decompress_time - decompress_time_old);
+        printf("#%%$: CP_Rd_Time[%d]: %lf\n", cp_file_num, rd_time - rd_time_old); 
+
+        decompress_time_old = decompress_time;
+        rd_time_old = rd_time;
+    }
+
 }
 
+void cpc_profile_(){
+    printf("#%%$: CP_Com_Time_All: %lf\n", compress_time);
+    printf("#%%$: CP_Wr_Time_All: %lf\n", wr_time); 
+    printf("#%%$: CP_Decom_Time_All: %lf\n", decompress_time);
+    printf("#%%$: CP_Rd_Time_All: %lf\n", rd_time); 
+}
 
-inline void compresswr(double *R, int *size) {
+inline void compresswr(void *R, int *size) {
     int err;
+    clock_t t1, t2, t3;
+
+    t1 = clock();
 
     buffer_resize((size_t)*size);
 
@@ -130,23 +179,35 @@ inline void compresswr(double *R, int *size) {
         printf("deflateEnd fail: %d: %s\n", err, defstream.msg);
     }
 
+    t2 = clock();
+
     // Size of variable
     dsize = (int)defstream.total_out;
     *((int*)buffer) = dsize;
 
     // Write to file
     write(fd, buffer, defstream.total_out + sizeof(dsize));
- 
+
+    t3 = clock();
+    
     printf("Write: %d -> %d\n", *size, dsize);
+
+    compress_time += (double)(t2 - t1) / CLOCKS_PER_SEC;
+    wr_time += (double)(t3 - t2) / CLOCKS_PER_SEC;
 }
 
-inline void compressrd(double *D, int *size) {
+inline void compressrd(void *D, int *size) {
     int err;
+    clock_t t1, t2, t3;
+
+    t1 = clock();
 
     buffer_resize((size_t)*size);
 
     // Read from file
     read(fd, buffer, dsize + sizeof(dsize));
+
+    t2 = clock();
 
     // zlib struct
     z_stream infstream;
@@ -175,10 +236,15 @@ inline void compressrd(double *D, int *size) {
         printf("Size mismatch: origin: %d, decompress: %lu\n", *size, infstream.total_out);
     }
 
+    t3 = clock();
+
     printf("Read: %lu -> %lu\n", dsize, infstream.total_out);
-    
+
     // Size of next variable
     dsize = *((int*)(buffer + dsize));
+
+    decompress_time += (double)(t3 - t2) / CLOCKS_PER_SEC;
+    rd_time += (double)(t2 - t1) / CLOCKS_PER_SEC;
 }
 
 
@@ -191,11 +257,11 @@ define(`CONCAT', `$1$2')dnl
 define(`CMP_REAL',changequote(`[', `]')dnl
 [dnl
 
-void compresswr_$1_($2 *R, size_t *size ifelse(`$3', `', `', `, $3') ) {
+void compresswr_$1_($2 *R, int *size ifelse(`$3', `', `', `, $3') ) {
     compresswr(R, size);
 }
 
-void compressrd_$1_($2 *D, size_t *size ifelse(`$3', `', `', `, $3') ) {
+void compressrd_$1_($2 *D, int *size ifelse(`$3', `', `', `, $3') ) {
     compressrd(D, size);
 }
 
