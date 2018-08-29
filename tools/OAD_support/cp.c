@@ -11,14 +11,38 @@
 #include "zfp.h"
 #include <time.h>
 
+#define BSIZE 1048576
+
 static int cp_file_num = 0;
 int fd;
 int wr;
+
+size_t bsize;
+char *buffer;
 
 static double compress_time, compress_time_old;
 static double decompress_time, decompress_time_old;
 static double wr_time, wr_time_old;
 static double rd_time, rd_time_old;
+
+void buffer_init(){
+    bsize = BSIZE;
+    buffer = (char*)malloc(bsize);
+}
+
+void buffer_free(){
+    bsize = 0;
+    free(buffer);
+}
+
+void buffer_resize(size_t size){
+    if (size > bsize){
+        while(bsize < size){
+            bsize <<= 1;
+        }
+        buffer = (char*)realloc(buffer, bsize);
+    }
+} 
 
 void cp_wr_open_(int *num){
     int rank;
@@ -41,6 +65,8 @@ void cp_wr_open_(int *num){
     if (num == NULL){
         cp_file_num++;
     }
+
+    buffer_init();
 
     wr = 1;
 }
@@ -66,6 +92,8 @@ void cp_rd_open_(int *num){
 
     fd = open(fname, O_CREAT | O_RDONLY, 0644);
 
+    buffer_init();
+
     wr = 0;
 }
 
@@ -75,6 +103,8 @@ void cpc_close_(){
     struct stat st;
 
     close(fd);
+
+    buffer_free();
     
     if (wr){
 #ifdef ALLOW_USE_MPI
@@ -120,7 +150,6 @@ void compresswr_real(void *data, size_t size, int dim, int *shape){
     bitstream *stream;
     size_t bufsize;  
     size_t zfpsize;
-    void *buffer;
     clock_t t1, t2, t3;
 
     t1 = clock();
@@ -150,10 +179,10 @@ void compresswr_real(void *data, size_t size, int dim, int *shape){
 
     // allocate buffer for compressed data
     bufsize = zfp_stream_maximum_size(zfp, field);    
-    buffer = malloc(bufsize);                        
+    buffer_resize((size_t)bufsize);              
 
     // associate bit stream with allocated buffer
-    stream = stream_open(buffer, bufsize);      
+    stream = stream_open((void*)buffer, bufsize);      
     zfp_stream_set_bit_stream(zfp, stream);                  
     zfp_stream_rewind(zfp);                  
 
@@ -163,11 +192,9 @@ void compresswr_real(void *data, size_t size, int dim, int *shape){
     t2 = clock();
 
     write(fd, &zfpsize, sizeof(zfpsize));
-    write(fd, buffer, zfpsize);
+    write(fd, (void*)buffer, zfpsize);
 
     t3 = clock();
-
-    free(buffer);
 
     compress_time += (double)(t2 - t1) / CLOCKS_PER_SEC;
     wr_time += (double)(t3 - t2) / CLOCKS_PER_SEC;
@@ -183,15 +210,14 @@ void compressrd_real(void *data, size_t size, int dim, int *shape){
     bitstream *stream;
     size_t bufsize;  
     size_t zfpsize;
-    void *buffer;
     clock_t t1, t2, t3;
     
     t1 = clock();
 
     // allocate buffer for compressed data                     
     read(fd, &bufsize, sizeof(bufsize));
-    buffer = malloc(bufsize);   
-    read(fd, buffer, bufsize);
+    buffer_resize((size_t)bufsize);   
+    read(fd, (void*)buffer, bufsize);
 
     t2 = clock();
 
@@ -220,15 +246,13 @@ void compressrd_real(void *data, size_t size, int dim, int *shape){
 
 
     // associate bit stream with allocated buffer
-    stream = stream_open(buffer, bufsize);      
+    stream = stream_open((void*)buffer, bufsize);      
     zfp_stream_set_bit_stream(zfp, stream);                  
     zfp_stream_rewind(zfp);                  
 
     ret = zfp_decompress(zfp, field);
 
     t3 = clock();
-
-    free(buffer);
 
     decompress_time += (double)(t3 - t2) / CLOCKS_PER_SEC;
     rd_time += (double)(t2 - t1) / CLOCKS_PER_SEC;
@@ -249,7 +273,6 @@ void compresswr_int(void *data, size_t size, int dim, int *shape){
     bitstream *stream;
     size_t bufsize;  
     size_t zfpsize;
-    void *buffer;
     clock_t t1, t2, t3;
 
     t1 = clock();
@@ -279,10 +302,10 @@ void compresswr_int(void *data, size_t size, int dim, int *shape){
 
     // allocate buffer for compressed data
     bufsize = zfp_stream_maximum_size(zfp, field);    
-    buffer = malloc(bufsize);                        
+    buffer_resize((size_t)bufsize);              
 
     // associate bit stream with allocated buffer
-    stream = stream_open(buffer, bufsize);      
+    stream = stream_open((void*)buffer, bufsize);      
     zfp_stream_set_bit_stream(zfp, stream);                  
     zfp_stream_rewind(zfp);                  
 
@@ -292,11 +315,9 @@ void compresswr_int(void *data, size_t size, int dim, int *shape){
     t2 = clock();
 
     write(fd, &zfpsize, sizeof(zfpsize));
-    write(fd, buffer, zfpsize);
+    write(fd, (void*)buffer, zfpsize);
 
     t3 = clock();
-
-    free(buffer);
 
     compress_time += (double)(t2 - t1) / CLOCKS_PER_SEC;
     wr_time += (double)(t3 - t2) / CLOCKS_PER_SEC;
@@ -312,15 +333,14 @@ void compressrd_int(void *data, size_t size, int dim, int *shape){
     bitstream *stream;
     size_t bufsize;  
     size_t zfpsize;
-    void *buffer;
     clock_t t1, t2, t3;
     
     t1 = clock();
 
     // allocate buffer for compressed data                     
     read(fd, &bufsize, sizeof(bufsize));
-    buffer = malloc(bufsize);   
-    read(fd, buffer, bufsize);
+    buffer_resize((size_t)bufsize);   
+    read(fd, (void*)buffer, bufsize);
 
     t2 = clock();
 
@@ -349,15 +369,13 @@ void compressrd_int(void *data, size_t size, int dim, int *shape){
 
 
     // associate bit stream with allocated buffer
-    stream = stream_open(buffer, bufsize);      
+    stream = stream_open((void*)buffer, bufsize);      
     zfp_stream_set_bit_stream(zfp, stream);                  
     zfp_stream_rewind(zfp);                  
 
     ret = zfp_decompress(zfp, field);
 
     t3 = clock();
-
-    free(buffer);
 
     decompress_time += (double)(t3 - t2) / CLOCKS_PER_SEC;
     rd_time += (double)(t2 - t1) / CLOCKS_PER_SEC;
