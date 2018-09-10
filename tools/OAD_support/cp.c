@@ -65,45 +65,45 @@ void cpc_close_(){
 
 
 
-void compresswr_real_(double *R, size_t*size  ) {
+void compresswr_real_(double *R, int* size  ) {
     //printf("Write %d bytes from %llx\n", *size, R);
     write(fd, R, *size);
 }
 
-void compressrd_real_(double *D, size_t *size  ) {
+void compressrd_real_(double *D, int *size  ) {
     //printf("Read %d bytes to %llx\n", *size, D);
     read(fd, D, *size);
 }
 
 
-void compresswr_integer_(int *R, size_t*size  ) {
+void compresswr_integer_(int *R, int* size  ) {
     //printf("Write %d bytes from %llx\n", *size, R);
     write(fd, R, *size);
 }
 
-void compressrd_integer_(int *D, size_t *size  ) {
+void compressrd_integer_(int *D, int *size  ) {
     //printf("Read %d bytes to %llx\n", *size, D);
     read(fd, D, *size);
 }
 
 
-void compresswr_bool_(int *R, size_t*size  ) {
+void compresswr_bool_(int *R, int* size  ) {
     //printf("Write %d bytes from %llx\n", *size, R);
     write(fd, R, *size);
 }
 
-void compressrd_bool_(int *D, size_t *size  ) {
+void compressrd_bool_(int *D, int *size  ) {
     //printf("Read %d bytes to %llx\n", *size, D);
     read(fd, D, *size);
 }
 
 
-void compresswr_string_(char *R, size_t*size , long l ) {
+void compresswr_string_(char *R, int* size , long l ) {
     //printf("Write %d bytes from %llx\n", *size, R);
     write(fd, R, *size);
 }
 
-void compressrd_string_(char *D, size_t *size , long l ) {
+void compressrd_string_(char *D, int *size , long l ) {
     //printf("Read %d bytes to %llx\n", *size, D);
     read(fd, D, *size);
 }

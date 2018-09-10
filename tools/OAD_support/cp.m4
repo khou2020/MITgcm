@@ -75,12 +75,12 @@ define(`CONCAT', `$1$2')dnl
 define(`CMP_REAL',changequote(`[', `]')dnl
 [dnl
 
-void compresswr_$1_($2 *R, size_t*size ifelse(`$3', `', `', `, $3') ) {
+void compresswr_$1_($2 *R, int* size ifelse(`$3', `', `', `, $3') ) {
     //printf("Write %d bytes from %llx\n", *size, R);
     write(fd, R, *size);
 }
 
-void compressrd_$1_($2 *D, size_t *size ifelse(`$3', `', `', `, $3') ) {
+void compressrd_$1_($2 *D, int *size ifelse(`$3', `', `', `, $3') ) {
     //printf("Read %d bytes to %llx\n", *size, D);
     read(fd, D, *size);
 }
