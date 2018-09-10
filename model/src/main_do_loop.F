@@ -206,6 +206,8 @@ C     >>>>>>>>>>>>>>>>>>>>>>>>>>>  STOPS   <<<<<<<<<<<<<<<<<<<<<<<<<<<<
 #ifdef ALLOW_DEBUG
       IF (debugMode) CALL DEBUG_LEAVE('MAIN_DO_LOOP',myThid)
 #endif
+      
+      CALL cpc_profile()
 
       RETURN
       END

@@ -106,7 +106,7 @@ c we may need these for the checkpointing
 
       nIter0 = NINT( (startTime-baseTime)/deltaTClock )
       if (our_rev_mode%arg_store) then
-      CALL TIMER_STOP('arg_store',myThid) 
+      CALL TIMER_START('CP_Write_Time',myThid) 
 	!call cp_write_open()
       call cp_wr_open(-1)
 #ifdef OAD_DEBUG_JOINT
@@ -117,21 +117,21 @@ c we may need these for the checkpointing
 !$PLACEHOLDER_PRAGMA$ id=8
        !call cp_close()
        call cpc_close()
-       CALL TIMER_STOP('arg_store',myThid)
+       CALL TIMER_STOP('CP_Write_Time',myThid)
       end if 
       if (our_rev_mode%arg_restore) then
-      CALL TIMER_START('arg_restore',myThid) 
 #ifdef OAD_DEBUG_JOINT
          write(standardmessageunit,'(A,A,A)') 
      +'OAD:',indentation(1:our_indent), 
      +' __SRNAME__: entering arg restore'
 #endif
+      CALL TIMER_START('CP_Read_Time',myThid) 
 	!call cp_read_open()
       call cp_rd_open(-1)
 !$PLACEHOLDER_PRAGMA$ id=9
 	!call cp_close()
       call cpc_close
-      CALL TIMER_STOP('arg_restore',myThid)
+      CALL TIMER_STOP('CP_Read_Time',myThid)
       end if
       if (our_rev_mode%plain) then
 #ifdef OAD_DEBUG_JOINT
@@ -166,11 +166,13 @@ c we may need these for the checkpointing
            theAction=rvNextAction()
            select case (theAction%actionFlag) 
              case (rvStore)
+                CALL TIMER_START('CP_Write_Time',myThid) 
                 !call cp_write_open(theAction%cpNum+jointCPCount)
                 call cp_wr_open(theAction%cpNum+jointCPCount)
 !$PLACEHOLDER_PRAGMA$ id=8
                 !call cp_close
                 call cpc_close()
+                CALL TIMER_STOP('CP_Write_Time',myThid)
              case (rvForward)
                 call OAD_revPlain
                 do currIter=currIter,theAction%iteration-1
@@ -216,18 +218,22 @@ c we may need these for the checkpointing
      +mythid )
 #endif
              case (rvStore)
+                CALL TIMER_START('CP_Write_Time',myThid) 
                 !call cp_write_open(theAction%cpNum+jointCPCount)
                 call cp_wr_open(theAction%cpNum+jointCPCount)
 !$PLACEHOLDER_PRAGMA$ id=8
                 !call cp_close
                 call cpc_close
+                CALL TIMER_STOP('CP_Write_Time',myThid)
              case (rvRestore)
+                CALL TIMER_START('CP_Read_Time',myThid) 
                 !call cp_read_open(theAction%cpNum+jointCPCount)
                 call cp_rd_open(theAction%cpNum+jointCPCount)
 !$PLACEHOLDER_PRAGMA$ id=9
                 currIter=theAction%iteration
                 !call cp_close
                 call cpc_close
+                CALL TIMER_STOP('CP_Read_Time',myThid)
              case (rvForward)
                 call OAD_revPlain
                 do currIter=currIter,theAction%iteration-1
