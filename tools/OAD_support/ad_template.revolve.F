@@ -103,6 +103,7 @@ c we may need these for the checkpointing
       else
             read (str_cp_budget, *) cp_budget
       end if
+      PRINT *, '#%$: CP_Budget: ', cp_budget
 
       nIter0 = NINT( (startTime-baseTime)/deltaTClock )
       if (our_rev_mode%arg_store) then
@@ -161,6 +162,7 @@ c we may need these for the checkpointing
          jointCPcount=cp_fNumber()
          initialized=rvInit(nTimeSteps,cp_budget,
      +                      errorMsg,theAction)
+         PRINT *, '#%$: NItrs: ', nTimeSteps
          IF (.NOT.initialized) WRITE(*,'(A,A)') 'Error: ', errorMsg
          do while (theAction%actionFlag/=rvDone)
            theAction=rvNextAction()
