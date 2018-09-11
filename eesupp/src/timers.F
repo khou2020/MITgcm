@@ -490,6 +490,9 @@ CCE107 - Start counting events
      &  ,'":'
         CALL PRINT_MESSAGE(msgBuffer,standardMessageUnit,
      &  SQUEEZE_RIGHT,myThreadId)
+        PRINT *, '#%$: Timer_',
+     &            timerNames(I,myThreadId)(1:timerNameLen(I,myThreadId))
+     &  ,':', timerWall(I,myThreadId)
         WRITE(msgBuffer,*) '         User time:',
      &  timerUser(iTimer,myThreadId)
         CALL PRINT_MESSAGE(msgBuffer,standardMessageUnit,
@@ -540,6 +543,9 @@ CCE107 - Start counting events
      &  ,'":'
          CALL PRINT_MESSAGE(msgBuffer,standardMessageUnit,
      &  SQUEEZE_RIGHT,myThreadId)
+         PRINT *, '#%$: Timer_',
+     &            timerNames(I,myThreadId)(1:timerNameLen(I,myThreadId))
+     &  ,':', timerWall(I,myThreadId)
          WRITE(msgBuffer,*) '         User time:',
      &  timerUser(I,myThreadId)
          CALL PRINT_MESSAGE(msgBuffer,standardMessageUnit,
