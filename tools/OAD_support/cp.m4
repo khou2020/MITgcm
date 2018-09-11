@@ -30,9 +30,11 @@ static double decompress_time, decompress_time_old;
 static double wr_time, wr_time_old;
 static double rd_time, rd_time_old;
 
+clock_t topen;
+
 void buffer_init(){
     bsize = BSIZE;
-    buffer = (char*)malloc(bsize);
+    buffer = (float*)malloc(bsize);
 }
 
 void buffer_free(){
@@ -45,13 +47,13 @@ void buffer_resize(size_t size){
         while(bsize < size){
             bsize <<= 1;
         }
-        buffer = (char*)realloc(buffer, bsize);
+        buffer = (float*)realloc(buffer, bsize);
     }
 } 
 
 void cp_wr_open_(int *num){
     int rank;
-    char fname[PATH_MAX];
+    char fname[PATH_MAX]; 
 
     if (*num > 0){
         cp_file_num = *num;
@@ -63,17 +65,18 @@ void cp_wr_open_(int *num){
     rank = 0;
 #endif
 
-    sprintf(fname, "oad_cp.%03d.%05d", rank, cp_file_num);
+    buffer_init();
 
-    fd = open(fname, O_CREAT | O_WRONLY, 0644);
+    sprintf(fname, "oad_cp.%03d.%05d", rank, cp_file_num);
 
     if (num == NULL){
         cp_file_num++;
     }
-
-    buffer_init();
-
     wr = 1;
+
+    topen = clock();
+
+    fd = open(fname, O_CREAT | O_WRONLY, 0644);
 }
 
 void cp_rd_open_(int *num){
@@ -93,21 +96,26 @@ void cp_rd_open_(int *num){
     rank = 0;
 #endif
 
+    buffer_init();
+    
     sprintf(fname, "oad_cp.%03d.%05d", rank, cp_file_num);
 
-    fd = open(fname, O_CREAT | O_RDONLY, 0644);
-
-    buffer_init();
-
     wr = 0;
+
+    topen = clock();
+
+    fd = open(fname, O_CREAT | O_RDONLY, 0644);
 }
 
 void cpc_close_(){
     int rank;
     char fname[PATH_MAX];
     struct stat st;
+    clock_t tclose;
 
     close(fd);
+
+    tclose = clock();
 
     buffer_free();
     
@@ -146,6 +154,44 @@ void cpc_profile_(){
     printf("#%%$: CP_Decom_Time_All: %lf\n", decompress_time);
     printf("#%%$: CP_Rd_Time_All: %lf\n", rd_time); 
 }
+
+void compresswr_real_(double *R, int* size  ) {
+    int i, n;
+    clock_t t1, t2, t3;
+
+    //printf("Write %d bytes from %llx\n", *size, R);
+    n = (*size) >> 3;
+    t1 = clock();
+    buffer_resize(n * sizeof(float));
+#pragma ivdep 
+    for(i = 0; i < n; i++){
+        buffer[i] = (float)R[i];
+    }
+    t2 = clock();
+    write(fd, buffer, n * sizeof(float));
+    t3 = clock();
+    compress_time += (double)(t2 - t1) / CLOCKS_PER_SEC;
+    wr_time += (double)(t3 - t2) / CLOCKS_PER_SEC;
+}
+
+void compressrd_real_(double *D, int *size  ) {
+    int i, n;
+    clock_t t1, t2, t3;
+
+    //printf("Read %d bytes to %llx\n", *size, D);
+    n = (*size) >> 3;
+    t1 = clock();
+    // Buffersize is already guaranteed on writing
+    read(fd, buffer, n * sizeof(float));
+    t2 = clock();
+#pragma ivdep 
+    for(i = 0; i < n; i++){
+        D[i] = (double)buffer[i];
+    }
+    t3 = clock();
+    rd_time += (double)(t2 - t1) / CLOCKS_PER_SEC;
+    decompress_time += (double)(t3 - t2) / CLOCKS_PER_SEC;
+}
 include(`foreach.m4')dnl
 include(`forloop.m4')dnl
 
@@ -175,7 +221,6 @@ void compressrd_$1_($2 *D, int *size ifelse(`$3', `', `', `, $3') ) {
 ]changequote([`], [']))dnl
 dnl
 
-foreach(`i', (`(`real', `double', `')',dnl
-                `(`integer', `int', `')',dnl
+foreach(`i', (  `(`integer', `int', `')',dnl
                 `(`bool', `int', `')',dnl 
                 `(`string', `char', ` long l')'), `CMP_REAL(translit(i, `()'))')
