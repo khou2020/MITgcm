@@ -30,9 +30,11 @@ static double decompress_time, decompress_time_old;
 static double wr_time, wr_time_old;
 static double rd_time, rd_time_old;
 
+clock_t topen;
+
 void buffer_init(){
     bsize = BSIZE;
-    buffer = (char*)malloc(bsize);
+    buffer = (float*)malloc(bsize);
 }
 
 void buffer_free(){
@@ -45,13 +47,13 @@ void buffer_resize(size_t size){
         while(bsize < size){
             bsize <<= 1;
         }
-        buffer = (char*)realloc(buffer, bsize);
+        buffer = (float*)realloc(buffer, bsize);
     }
 } 
 
 void cp_wr_open_(int *num){
     int rank;
-    char fname[PATH_MAX];
+    char fname[PATH_MAX]; 
 
     if (*num > 0){
         cp_file_num = *num;
@@ -63,17 +65,18 @@ void cp_wr_open_(int *num){
     rank = 0;
 #endif
 
-    sprintf(fname, "oad_cp.%03d.%05d", rank, cp_file_num);
+    //buffer_init();
 
-    fd = open(fname, O_CREAT | O_WRONLY, 0644);
+    sprintf(fname, "oad_cp.%03d.%05d", rank, cp_file_num);
 
     if (num == NULL){
         cp_file_num++;
     }
-
-    buffer_init();
-
     wr = 1;
+
+    topen = clock();
+
+    fd = open(fname, O_CREAT | O_WRONLY, 0644);
 }
 
 void cp_rd_open_(int *num){
@@ -93,23 +96,28 @@ void cp_rd_open_(int *num){
     rank = 0;
 #endif
 
+    //buffer_init();
+    
     sprintf(fname, "oad_cp.%03d.%05d", rank, cp_file_num);
 
-    fd = open(fname, O_CREAT | O_RDONLY, 0644);
-
-    buffer_init();
-
     wr = 0;
+
+    topen = clock();
+
+    fd = open(fname, O_CREAT | O_RDONLY, 0644);
 }
 
 void cpc_close_(){
     int rank;
     char fname[PATH_MAX];
     struct stat st;
+    clock_t tclose;
 
     close(fd);
 
-    buffer_free();
+    tclose = clock();
+
+    //buffer_free();
     
     if (wr){
 #ifdef ALLOW_USE_MPI
