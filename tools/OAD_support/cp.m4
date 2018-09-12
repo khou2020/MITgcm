@@ -15,7 +15,7 @@ dnl
 #include <mpi.h>
 #endif
 #include <time.h>
-
+//
 #define BSIZE 1048576
      
 static int cp_file_num = 0;
