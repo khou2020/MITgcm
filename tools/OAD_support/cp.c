@@ -25,6 +25,8 @@ static double decompress_time, decompress_time_old;
 static double wr_time, wr_time_old;
 static double rd_time, rd_time_old;
 
+clock_t topen;
+
 void buffer_init(){
     bsize = BSIZE;
     buffer = (char*)malloc(bsize);
@@ -46,7 +48,7 @@ void buffer_resize(size_t size){
 
 void cp_wr_open_(int *num){
     int rank;
-    char fname[PATH_MAX];
+    char fname[PATH_MAX]; 
 
     if (*num > 0){
         cp_file_num = *num;
@@ -58,17 +60,18 @@ void cp_wr_open_(int *num){
     rank = 0;
 #endif
 
-    sprintf(fname, "oad_cp.%03d.%05d", rank, cp_file_num);
+    buffer_init();
 
-    fd = open(fname, O_CREAT | O_WRONLY, 0644);
+    sprintf(fname, "oad_cp.%03d.%05d", rank, cp_file_num);
 
     if (num == NULL){
         cp_file_num++;
     }
-
-    buffer_init();
-
     wr = 1;
+
+    topen = clock();
+
+    fd = open(fname, O_CREAT | O_WRONLY, 0644);
 }
 
 void cp_rd_open_(int *num){
@@ -88,26 +91,33 @@ void cp_rd_open_(int *num){
     rank = 0;
 #endif
 
+    buffer_init();
+    
     sprintf(fname, "oad_cp.%03d.%05d", rank, cp_file_num);
+
+    wr = 0;
+
+    topen = clock();
 
     fd = open(fname, O_CREAT | O_RDONLY, 0644);
 
-    buffer_init();
-
     read(fd, &dsize, sizeof(dsize));
 
-     wr = 0;
+    wr = 0;
 }
 
 void cpc_close_(){
     int rank;
     char fname[PATH_MAX];
     struct stat st;
+    clock_t tclose;
 
     close(fd);
-    
-    buffer_free();
 
+    tclose = clock();
+
+    buffer_free();
+    
     if (wr){
 #ifdef ALLOW_USE_MPI
         MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -116,17 +126,21 @@ void cpc_close_(){
 #endif
         sprintf(fname, "oad_cp.%03d.%05d", rank, cp_file_num);
         stat(fname, &st);
-        printf("#%%$: CP_Size[%d]: %lld\n", cp_file_num, (long long)st.st_size);
+        printf("#%%$: CP_Size_%d: %lld\n", cp_file_num, (long long)st.st_size);
 
-        printf("#%%$: CP_Com_Time[%d]: %lf\n", cp_file_num, compress_time - compress_time_old);
-        printf("#%%$: CP_Wr_Time[%d]: %lf\n", cp_file_num, wr_time - wr_time_old); 
+        printf("#%%$: CP_Com_Time_%d: %lf\n", cp_file_num, compress_time - compress_time_old);
+        printf("#%%$: CP_Wr_Time_%d: %lf\n", cp_file_num, wr_time - wr_time_old); 
+
+        printf("#%%$: CP_Store_Time_%d: %lf\n", cp_file_num, (double)(tclose - topen) / CLOCKS_PER_SEC); 
 
         compress_time_old = compress_time;
         wr_time_old = wr_time;
     }
     else{
-        printf("#%%$: CP_Decom_Time[%d]: %lf\n", cp_file_num, decompress_time - decompress_time_old);
-        printf("#%%$: CP_Rd_Time[%d]: %lf\n", cp_file_num, rd_time - rd_time_old); 
+        printf("#%%$: CP_Decom_Time_%d: %lf\n", cp_file_num, decompress_time - decompress_time_old);
+        printf("#%%$: CP_Rd_Time_%d: %lf\n", cp_file_num, rd_time - rd_time_old); 
+
+        printf("#%%$: CP_Restore_Time_%d: %lf\n", cp_file_num, (double)(tclose - topen) / CLOCKS_PER_SEC); 
 
         decompress_time_old = decompress_time;
         rd_time_old = rd_time;

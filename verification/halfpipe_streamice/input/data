@@ -24,10 +24,10 @@
 # Time stepping parameters
  &PARM03
  startTime=0.,
- nTimeSteps = 10,
+ nTimeSteps = 40,
 # endTime=6307200000.,
 # endTime=8640000000.,
- deltaT=6307200.,
+ deltaT=1576800.,
 # abEps=0.1,
 # pChkptFreq=2592000.,
 # chkptFreq=120000.,
@@ -39,13 +39,13 @@
 # Gridding parameters
  &PARM04
  usingCartesianGrid=.TRUE.,
- delX=40*2.e3,
- delY=20*2.e3,
+ delX=160*0.5e3,
+ delY=80*0.5e3,
  delZ=1800.,
  &
 
  &PARM05
- bathyFile='topog.box',
+ bathyFile='topog160.box',
 # hydrogThetaFile=,
 # hydrogSaltFile=,
  &

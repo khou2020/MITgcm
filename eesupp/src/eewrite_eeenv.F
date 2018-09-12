@@ -111,10 +111,14 @@ CEOP
       CALL PRINT_MESSAGE( msgBuf, standardMessageUnit,
      &  SQUEEZE_RIGHT , 1)
 
+      PRINT *, '#%$: Grid_Nx: ', Nx
+
       WRITE(msgBuf,'(A,I5,A)') '      Ny =', Ny,
      & ' ; /* Total domain size in Y ( = nPy*nSy*sNy ) */'
       CALL PRINT_MESSAGE( msgBuf, standardMessageUnit,
      &  SQUEEZE_RIGHT , 1)
+
+      PRINT *, '#%$: Grid_Ny: ', Ny
 
       WRITE(msgBuf,'(A,I5,A)') '  nTiles =', nSx*nSy,
      & ' ; /* Total no. tiles per process ( = nSx*nSy ) */'

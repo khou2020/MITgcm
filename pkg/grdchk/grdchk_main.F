@@ -453,11 +453,11 @@ C******************************************************
      &             layer,itile,jtile,obcspos,
      &             fcref, fcpertplus, fcpertminus
             WRITE(standardmessageunit, '(A,I0,A,E19.11)') 
-     &           '#%$: fcref[', ichknum, ']: ', fcref
+     &           '#%$: fcref_', ichknum, ': ', fcref
             WRITE(standardmessageunit, '(A,I0,A,E19.11)') 
-     &           '#%$: fcpertplus[', ichknum, ']: ', fcpertplus
+     &           '#%$: fcpertplus_', ichknum, ': ', fcpertplus
             WRITE(standardmessageunit, '(A,I0,A,E19.11)')
-     &           '#%$: fcpertminus[', ichknum, ']: ', fcpertminus
+     &           '#%$: fcpertminus_', ichknum, ': ', fcpertminus
 #ifdef ALLOW_TANGENTLINEAR_RUN
             WRITE(standardmessageunit,'(A,8I5,1x,1P3E19.11)')
      &           ' grad-res ',myprocid,ichknum,ichkmem(ichknum),
@@ -471,11 +471,11 @@ C******************************************************
      &             bimem(ichknum),bjmem(ichknum),iobcsmem(ichknum),
      &             adxxmemo, gfd, ratio_ad
             WRITE(standardmessageunit, '(A,I0,A,E19.11)')
-     &           '#%$: adxxmemo[', ichknum, ']: ', adxxmemo
+     &           '#%$: adxxmemo_', ichknum, ': ', adxxmemo
             WRITE(standardmessageunit, '(A,I0,A,E19.11)') 
-     &           '#%$: gfd[', ichknum, ']: ', gfd
+     &           '#%$: gfd_', ichknum, ': ', gfd
             WRITE(standardmessageunit, '(A,I0,A,E19.11)') 
-     &           '#%$: ratio_ad[', ichknum, ']: ', ratio_ad
+     &           '#%$: ratio_ad_', ichknum, ': ', ratio_ad
 #endif
           ENDIF
 #ifdef ALLOW_TANGENTLINEAR_RUN

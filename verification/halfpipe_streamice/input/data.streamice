@@ -23,7 +23,7 @@
  streamice_bg_surf_slope_x = 0.,
  STREAMICEthickInit='PARAM',
  STREAMICEthickFile='h_init.box',
- STREAMICEtopogFile='topog.box',
+ STREAMICEtopogFile='topog160.box',
  STREAMICEbasalTracConfig='UNIFORM',
  STREAMICEGlenConstConfig='UNIFORM',
  &
