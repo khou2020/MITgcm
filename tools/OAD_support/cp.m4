@@ -15,7 +15,6 @@ dnl
 #include <mpi.h>
 #endif
 #include <time.h>
-////
 #define BSIZE 1048576
      
 static int cp_file_num = 0;
@@ -29,6 +28,7 @@ static double compress_time, compress_time_old;
 static double decompress_time, decompress_time_old;
 static double wr_time, wr_time_old;
 static double rd_time, rd_time_old;
+static double store_time, restore_time;
 
 clock_t topen;
 
@@ -136,6 +136,7 @@ void cpc_close_(){
 
         compress_time_old = compress_time;
         wr_time_old = wr_time;
+        store_time += (double)(tclose - topen) / CLOCKS_PER_SEC;
     }
     else{
         printf("#%%$: CP_Decom_Time_%d: %lf\n", cp_file_num, decompress_time - decompress_time_old);
@@ -145,14 +146,17 @@ void cpc_close_(){
 
         decompress_time_old = decompress_time;
         rd_time_old = rd_time;
+        restore_time += (double)(tclose - topen) / CLOCKS_PER_SEC;
     }
 }
 
 void cpc_profile_(){
     printf("#%%$: CP_Com_Time_All: %lf\n", compress_time);
     printf("#%%$: CP_Wr_Time_All: %lf\n", wr_time); 
+    printf("#%%$: CP_Store_Time_All: %lf\n", store_time); 
     printf("#%%$: CP_Decom_Time_All: %lf\n", decompress_time);
     printf("#%%$: CP_Rd_Time_All: %lf\n", rd_time); 
+    printf("#%%$: CP_Restore_Time_All: %lf\n", restore_time); 
 }
 include(`foreach.m4')dnl
 include(`forloop.m4')dnl
