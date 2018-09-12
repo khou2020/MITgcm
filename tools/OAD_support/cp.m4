@@ -34,7 +34,7 @@ clock_t topen;
 
 void buffer_init(){
     bsize = BSIZE;
-    buffer = (float*)malloc(bsize);
+    buffer = (char*)malloc(bsize);
 }
 
 void buffer_free(){
@@ -47,7 +47,7 @@ void buffer_resize(size_t size){
         while(bsize < size){
             bsize <<= 1;
         }
-        buffer = (float*)realloc(buffer, bsize);
+        buffer = (char*)realloc(buffer, bsize);
     }
 } 
 
