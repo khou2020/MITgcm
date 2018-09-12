@@ -26,6 +26,8 @@ static double decompress_time, decompress_time_old;
 static double wr_time, wr_time_old;
 static double rd_time, rd_time_old;
 
+clock_t topen;
+
 void buffer_init(){
     bsize = BSIZE;
     buffer = (char*)malloc(bsize);
@@ -70,7 +72,7 @@ void cp_wr_open_(int *num){
 
     topen = clock();
 
-    fd = open(fname, O_CREAT | O_WRONLY, 0644);
+    fd = open(fname, O_CREAT | O_WRONLY | O_TRUNC, 0644);
 }
 
 void cp_rd_open_(int *num){
@@ -107,13 +109,12 @@ void cpc_close_(){
     struct stat st;
     clock_t tclose;
 
-    close(fd);
-
-    tclose = clock();
-
-    buffer_free();
-    
     if (wr){
+        fsync(fd);
+        close(fd);
+
+        tclose = clock();
+
 #ifdef ALLOW_USE_MPI
         MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 #else
@@ -132,6 +133,10 @@ void cpc_close_(){
         wr_time_old = wr_time;
     }
     else{
+        close(fd);
+
+        tclose = clock();
+
         printf("#%%$: CP_Decom_Time_%d: %lf\n", cp_file_num, decompress_time - decompress_time_old);
         printf("#%%$: CP_Rd_Time_%d: %lf\n", cp_file_num, rd_time - rd_time_old); 
 
@@ -140,6 +145,8 @@ void cpc_close_(){
         decompress_time_old = decompress_time;
         rd_time_old = rd_time;
     }
+
+    buffer_free();
 }
 
 void cpc_profile_(){

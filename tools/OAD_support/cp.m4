@@ -31,6 +31,9 @@ static double compress_time, compress_time_old;
 static double decompress_time, decompress_time_old;
 static double wr_time, wr_time_old;
 static double rd_time, rd_time_old;
+static double store_time, restore_time;
+
+clock_t topen;
 
 void buffer_init(){
     bsize = BSIZE;
@@ -76,7 +79,7 @@ void cp_wr_open_(int *num){
 
     topen = clock();
 
-    fd = open(fname, O_CREAT | O_WRONLY, 0644);
+    fd = open(fname, O_CREAT | O_WRONLY | O_TRUNC, 0644);
 }
 
 void cp_rd_open_(int *num){
@@ -113,13 +116,12 @@ void cpc_close_(){
     struct stat st;
     clock_t tclose;
 
-    close(fd);
-
-    tclose = clock();
-
-    buffer_free();
-    
     if (wr){
+        fsync(fd);
+        close(fd);
+
+        tclose = clock();
+
 #ifdef ALLOW_USE_MPI
         MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 #else
@@ -136,8 +138,13 @@ void cpc_close_(){
 
         compress_time_old = compress_time;
         wr_time_old = wr_time;
+        store_time += (double)(tclose - topen) / CLOCKS_PER_SEC;
     }
     else{
+        close(fd);
+
+        tclose = clock();
+
         printf("#%%$: CP_Decom_Time_%d: %lf\n", cp_file_num, decompress_time - decompress_time_old);
         printf("#%%$: CP_Rd_Time_%d: %lf\n", cp_file_num, rd_time - rd_time_old); 
 
@@ -145,14 +152,19 @@ void cpc_close_(){
 
         decompress_time_old = decompress_time;
         rd_time_old = rd_time;
+        restore_time += (double)(tclose - topen) / CLOCKS_PER_SEC;
     }
+
+    buffer_free();
 }
 
 void cpc_profile_(){
     printf("#%%$: CP_Com_Time_All: %lf\n", compress_time);
     printf("#%%$: CP_Wr_Time_All: %lf\n", wr_time); 
+    printf("#%%$: CP_Store_Time_All: %lf\n", store_time); 
     printf("#%%$: CP_Decom_Time_All: %lf\n", decompress_time);
     printf("#%%$: CP_Rd_Time_All: %lf\n", rd_time); 
+    printf("#%%$: CP_Restore_Time_All: %lf\n", restore_time); 
 }
 
 include(`foreach.m4')dnl
