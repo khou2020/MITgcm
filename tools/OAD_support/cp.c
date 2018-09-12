@@ -12,6 +12,7 @@
 #include <time.h>
 
 #define BSIZE 1048576
+#define THRESHOLD 1024
 
 static int cp_file_num = 0;
 int fd;
@@ -46,7 +47,7 @@ void buffer_resize(size_t size){
 
 void cp_wr_open_(int *num){
     int rank;
-    char fname[PATH_MAX];
+    char fname[PATH_MAX]; 
 
     if (*num > 0){
         cp_file_num = *num;
@@ -58,17 +59,18 @@ void cp_wr_open_(int *num){
     rank = 0;
 #endif
 
-    sprintf(fname, "oad_cp.%03d.%05d", rank, cp_file_num);
+    buffer_init();
 
-    fd = open(fname, O_CREAT | O_WRONLY, 0644);
+    sprintf(fname, "oad_cp.%03d.%05d", rank, cp_file_num);
 
     if (num == NULL){
         cp_file_num++;
     }
-
-    buffer_init();
-
     wr = 1;
+
+    topen = clock();
+
+    fd = open(fname, O_CREAT | O_WRONLY, 0644);
 }
 
 void cp_rd_open_(int *num){
@@ -88,21 +90,26 @@ void cp_rd_open_(int *num){
     rank = 0;
 #endif
 
+    buffer_init();
+    
     sprintf(fname, "oad_cp.%03d.%05d", rank, cp_file_num);
 
-    fd = open(fname, O_CREAT | O_RDONLY, 0644);
-
-    buffer_init();
-
     wr = 0;
+
+    topen = clock();
+
+    fd = open(fname, O_CREAT | O_RDONLY, 0644);
 }
 
 void cpc_close_(){
     int rank;
     char fname[PATH_MAX];
     struct stat st;
+    clock_t tclose;
 
     close(fd);
+
+    tclose = clock();
 
     buffer_free();
     
@@ -114,17 +121,21 @@ void cpc_close_(){
 #endif
         sprintf(fname, "oad_cp.%03d.%05d", rank, cp_file_num);
         stat(fname, &st);
-        printf("#%%$: CP_Size[%d]: %lld\n", cp_file_num, (long long)st.st_size);
+        printf("#%%$: CP_Size_%d: %lld\n", cp_file_num, (long long)st.st_size);
 
-        printf("#%%$: CP_Com_Time[%d]: %lf\n", cp_file_num, compress_time - compress_time_old);
-        printf("#%%$: CP_Wr_Time[%d]: %lf\n", cp_file_num, wr_time - wr_time_old); 
+        printf("#%%$: CP_Com_Time_%d: %lf\n", cp_file_num, compress_time - compress_time_old);
+        printf("#%%$: CP_Wr_Time_%d: %lf\n", cp_file_num, wr_time - wr_time_old); 
+
+        printf("#%%$: CP_Store_Time_%d: %lf\n", cp_file_num, (double)(tclose - topen) / CLOCKS_PER_SEC); 
 
         compress_time_old = compress_time;
         wr_time_old = wr_time;
     }
     else{
-        printf("#%%$: CP_Decom_Time[%d]: %lf\n", cp_file_num, decompress_time - decompress_time_old);
-        printf("#%%$: CP_Rd_Time[%d]: %lf\n", cp_file_num, rd_time - rd_time_old); 
+        printf("#%%$: CP_Decom_Time_%d: %lf\n", cp_file_num, decompress_time - decompress_time_old);
+        printf("#%%$: CP_Rd_Time_%d: %lf\n", cp_file_num, rd_time - rd_time_old); 
+
+        printf("#%%$: CP_Restore_Time_%d: %lf\n", cp_file_num, (double)(tclose - topen) / CLOCKS_PER_SEC); 
 
         decompress_time_old = decompress_time;
         rd_time_old = rd_time;
@@ -392,7 +403,7 @@ void compressrd_int(void *data, size_t size, int dim, int *shape){
 
 
 void compresswr_real_(double *R, int *size, int *dim, int *shape ) {
-    if (*dim > 0){
+    if (*size > THRESHOLD){
         compresswr_real((void*)R, (size_t)(*size), *dim, shape);
     }
     else{
@@ -405,7 +416,7 @@ void compresswr_real_(double *R, int *size, int *dim, int *shape ) {
 }
 
 void compressrd_real_(double *D, int *size, int *dim, int *shape  ) {
-    if (*dim > 0){
+    if (*size > THRESHOLD){
         compressrd_real((void*)D, (size_t)(*size), *dim, shape);
     }
     else{
@@ -419,7 +430,7 @@ void compressrd_real_(double *D, int *size, int *dim, int *shape  ) {
 
 
 void compresswr_integer_(int *R, int *size, int *dim, int *shape ) {
-    if (*dim > 0){
+    if (*size > THRESHOLD){
         compresswr_int((void*)R, (size_t)(*size), *dim, shape);
     }
     else{
@@ -432,7 +443,7 @@ void compresswr_integer_(int *R, int *size, int *dim, int *shape ) {
 }
 
 void compressrd_integer_(int *D, int *size, int *dim, int *shape  ) {
-    if (*dim > 0){
+    if (*size > THRESHOLD){
         compressrd_int((void*)D, (size_t)(*size), *dim, shape);
     }
     else{
@@ -446,7 +457,7 @@ void compressrd_integer_(int *D, int *size, int *dim, int *shape  ) {
 
 
 void compresswr_bool_(int *R, int *size, int *dim, int *shape ) {
-    if (*dim > 0){
+    if (*size > THRESHOLD){
         compresswr_int((void*)R, (size_t)(*size), *dim, shape);
     }
     else{
@@ -459,7 +470,7 @@ void compresswr_bool_(int *R, int *size, int *dim, int *shape ) {
 }
 
 void compressrd_bool_(int *D, int *size, int *dim, int *shape  ) {
-    if (*dim > 0){
+    if (*size > THRESHOLD){
         compressrd_int((void*)D, (size_t)(*size), *dim, shape);
     }
     else{
