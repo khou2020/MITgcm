@@ -126,7 +126,7 @@ void cpc_close_(){
     //buffer_free();
     
     if (wr){
-        fsync(fd);
+        //fsync(fd);
         close(fd);
         
         tclose = getwalltime();
