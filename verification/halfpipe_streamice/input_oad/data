@@ -22,10 +22,10 @@
 # Time stepping parameters
  &PARM03
  startTime=0.,
- nTimeSteps = 30,
+ nTimeSteps = 12,
 # endTime=6307200000.,
 # endTime=8640000000.,
- deltaT=630720.,
+ deltaT=1576800.,
 # pChkptFreq=2592000.,
 # chkptFreq=120000.,
 # dumpFreq=2592000.,
