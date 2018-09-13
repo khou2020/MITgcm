@@ -6,6 +6,7 @@ dnl
 dnl
 
 
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -125,13 +126,14 @@ void cpc_close_(){
     struct stat st;
     double tclose;
 
-    close(fd);
-
-    tclose = getwalltime();
-
     //buffer_free();
     
     if (wr){
+        fsync(fd);
+        close(fd);
+        
+        tclose = getwalltime();
+
 #ifdef ALLOW_USE_MPI
         MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 #else
@@ -151,6 +153,10 @@ void cpc_close_(){
         store_time_all += tclose - topen;
     }
     else{
+        close(fd);
+
+        tclose = getwalltime();
+
         printf("#%%$: CP_Decom_Time_%d: %lf\n", cp_file_num, decompress_time);
         printf("#%%$: CP_Rd_Time_%d: %lf\n", cp_file_num, rd_time); 
 
@@ -179,6 +185,7 @@ define(`CMP_REAL',changequote(`[', `]')dnl
 [dnl
 
 void compresswr_$1_($2 *R, int* size ifelse(`$3', `', `', `, $3') ) {
+    double t1, t2;
     //printf("Write %d bytes from %llx\n", *size, R);
     t1 = getwalltime();
     write(fd, R, (size_t)(*size));
@@ -187,8 +194,8 @@ void compresswr_$1_($2 *R, int* size ifelse(`$3', `', `', `, $3') ) {
 }
 
 void compressrd_$1_($2 *D, int *size ifelse(`$3', `', `', `, $3') ) {
-    //printf("Read %d bytes to %llx\n", *size, D);
     double t1, t2;
+    //printf("Read %d bytes to %llx\n", *size, D);
     t1 = getwalltime();
     read(fd, D, (size_t)(*size));
     t2 = getwalltime();

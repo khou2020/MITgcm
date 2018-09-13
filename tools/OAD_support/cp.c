@@ -119,13 +119,14 @@ void cpc_close_(){
     struct stat st;
     double tclose;
 
-    close(fd);
-
-    tclose = getwalltime();
-
     //buffer_free();
     
     if (wr){
+        fsync(fd);
+        close(fd);
+        
+        tclose = getwalltime();
+
 #ifdef ALLOW_USE_MPI
         MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 #else
@@ -145,6 +146,10 @@ void cpc_close_(){
         store_time_all += tclose - topen;
     }
     else{
+        close(fd);
+
+        tclose = getwalltime();
+
         printf("#%%$: CP_Decom_Time_%d: %lf\n", cp_file_num, decompress_time);
         printf("#%%$: CP_Rd_Time_%d: %lf\n", cp_file_num, rd_time); 
 
@@ -165,10 +170,8 @@ void cpc_profile_(){
     printf("#%%$: CP_Restore_Time_All: %lf\n", restore_time_all); 
 }
 
-
-
-
 void compresswr_real_(double *R, int* size  ) {
+    double t1, t2;
     //printf("Write %d bytes from %llx\n", *size, R);
     t1 = getwalltime();
     write(fd, R, (size_t)(*size));
@@ -177,8 +180,8 @@ void compresswr_real_(double *R, int* size  ) {
 }
 
 void compressrd_real_(double *D, int *size  ) {
-    //printf("Read %d bytes to %llx\n", *size, D);
     double t1, t2;
+    //printf("Read %d bytes to %llx\n", *size, D);
     t1 = getwalltime();
     read(fd, D, (size_t)(*size));
     t2 = getwalltime();
@@ -187,6 +190,7 @@ void compressrd_real_(double *D, int *size  ) {
 
 
 void compresswr_integer_(int *R, int* size  ) {
+    double t1, t2;
     //printf("Write %d bytes from %llx\n", *size, R);
     t1 = getwalltime();
     write(fd, R, (size_t)(*size));
@@ -195,8 +199,8 @@ void compresswr_integer_(int *R, int* size  ) {
 }
 
 void compressrd_integer_(int *D, int *size  ) {
-    //printf("Read %d bytes to %llx\n", *size, D);
     double t1, t2;
+    //printf("Read %d bytes to %llx\n", *size, D);
     t1 = getwalltime();
     read(fd, D, (size_t)(*size));
     t2 = getwalltime();
@@ -205,6 +209,7 @@ void compressrd_integer_(int *D, int *size  ) {
 
 
 void compresswr_bool_(int *R, int* size  ) {
+    double t1, t2;
     //printf("Write %d bytes from %llx\n", *size, R);
     t1 = getwalltime();
     write(fd, R, (size_t)(*size));
@@ -213,8 +218,8 @@ void compresswr_bool_(int *R, int* size  ) {
 }
 
 void compressrd_bool_(int *D, int *size  ) {
-    //printf("Read %d bytes to %llx\n", *size, D);
     double t1, t2;
+    //printf("Read %d bytes to %llx\n", *size, D);
     t1 = getwalltime();
     read(fd, D, (size_t)(*size));
     t2 = getwalltime();
@@ -223,6 +228,7 @@ void compressrd_bool_(int *D, int *size  ) {
 
 
 void compresswr_string_(char *R, int* size , long l ) {
+    double t1, t2;
     //printf("Write %d bytes from %llx\n", *size, R);
     t1 = getwalltime();
     write(fd, R, (size_t)(*size));
@@ -231,8 +237,8 @@ void compresswr_string_(char *R, int* size , long l ) {
 }
 
 void compressrd_string_(char *D, int *size , long l ) {
-    //printf("Read %d bytes to %llx\n", *size, D);
     double t1, t2;
+    //printf("Read %d bytes to %llx\n", *size, D);
     t1 = getwalltime();
     read(fd, D, (size_t)(*size));
     t2 = getwalltime();
