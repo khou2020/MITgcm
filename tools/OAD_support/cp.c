@@ -12,6 +12,7 @@
 #include <time.h>
 
 #define BSIZE (1 * 1024 * 1024)
+#define FSIZE (100 * 1024 * 1024)
 
 typedef struct cp_fd{
     int fd;
@@ -61,7 +62,7 @@ void buffer_resize(size_t size){
     }
 } 
 
-cp_fd cp_wr_open(char* fname, int flag, size_t fsize){
+cp_fd cp_wr_open(char* fname, size_t fsize){
     int pagesize;
     cp_fd tmp;
 
@@ -69,7 +70,7 @@ cp_fd cp_wr_open(char* fname, int flag, size_t fsize){
     tmp->buf  = (char*)malloc(BSIZE + pagesize);
     tmp->abuf = tmp->cbuf = (char*)((((size_t)tmp->buf + (size_t)pagesize - 1) / (size_t)pagesize) * (size_t)pagesize);
 
-    tmp->fd = open(fname, flag | O_TRUNC | O_DIRECT, 0644);
+    tmp->fd = open(fname, O_CREAT | O_WRONLY | O_TRUNC | O_DIRECT | O_SYNC, 0644);
 
     return tmp;
 }
@@ -100,7 +101,7 @@ int cp_wr_close(cp_fd fd){
     return ret;
 }
 
-cp_fd cp_rd_open(char* fname, int flag, size_t fsize){
+cp_fd cp_rd_open(char* fname, int flag){
     int pagesize;
     cp_fd tmp;
     struct stat st;
@@ -112,7 +113,7 @@ cp_fd cp_rd_open(char* fname, int flag, size_t fsize){
     tmp->buf  = (char*)malloc(BSIZE + pagesize);
     tmp->abuf = tmp->cbuf = (char*)((((size_t)tmp->buf + (size_t)pagesize - 1) / (size_t)pagesize) * (size_t)pagesize);
 
-    tmp->fd = open(fname, flag | O_TRUNC | O_DIRECT, 0644);
+    tmp->fd = open(fname, O_RDONLY | O_TRUNC | O_DIRECT | O_SYNC, 0644);
 
     return tmp;
 }
@@ -155,7 +156,7 @@ void cp_wr_open_(int *num){
 
     topen = clock();
 
-    fd = open(fname, O_CREAT | O_WRONLY | O_TRUNC | O_DIRECT, 0644);
+    fd = cp_wr_open(fname, FSIZE);
 }
 
 void cp_rd_open_(int *num){
@@ -183,22 +184,19 @@ void cp_rd_open_(int *num){
 
     topen = clock();
 
-    fd = open(fname, O_CREAT | O_RDONLY, 0644);
+    fd = cp_rd_open(fname);
 }
 
 void cpc_close_(){
     int rank;
     char fname[PATH_MAX];
     struct stat st;
-    clock_t tclose;
-
-    close(fd);
-
-    tclose = clock();
 
     //buffer_free();
     
     if (wr){
+        cp_wr_close(fd);
+
 #ifdef ALLOW_USE_MPI
         MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 #else
@@ -218,6 +216,8 @@ void cpc_close_(){
         store_time += (double)(tclose - topen) / CLOCKS_PER_SEC;
     }
     else{
+        cp_rd_close(fd);
+
         printf("#%%$: CP_Decom_Time_%d: %lf\n", cp_file_num, decompress_time - decompress_time_old);
         printf("#%%$: CP_Rd_Time_%d: %lf\n", cp_file_num, rd_time - rd_time_old); 
 
