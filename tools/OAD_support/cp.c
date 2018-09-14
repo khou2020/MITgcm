@@ -1,3 +1,5 @@
+
+
 #define _GNU_SOURCE
 
 #include <stdlib.h>
@@ -20,11 +22,11 @@ typedef struct cp_fd{
 };
 
 static int cp_file_num = 0;
-cp_fd fd;
+int fd;
 int wr;
 
-size_t bsize;
-char *buffer;
+size_t bsize, bused;
+void *buffer, *abuffer;
 
 static double compress_time_all, decompress_time_all, wr_time_all, rd_time_all, store_time_all, restore_time_all;
 double compress_time, decompress_time, wr_time, rd_time;
@@ -37,9 +39,18 @@ double getwalltime(){
     return (double)tp.tv_sec + (double)tp.tv_nsec / 1e+9f;
 }
 
+void *iobuf;
+size_t iobsize;
+
 void buffer_init(){
+    int pagesize;
+
+    pagesize = getpagesize();
+    buffer = malloc(BSIZE + pagesize);
+    abuffer=(void*)((((unsigned long long)realbuff+(unsigned long long)pagesize-1)/(unsigned long long)pagesize)*(unsigned long long)pagesize);
+
     bsize = BSIZE;
-    buffer = (char*)malloc(bsize);
+    buffer = (float*)malloc(bsize);
 }
 
 void buffer_free(){
@@ -52,11 +63,11 @@ void buffer_resize(size_t size){
         while(bsize < size){
             bsize <<= 1;
         }
-        buffer = (char*)realloc(buffer, bsize);
+        buffer = (float*)realloc(buffer, bsize);
     }
 } 
 
-cp_fd cp_wr_open(char* fname, int flag, size_t fsize){
+cp_fd cp_wr_open(char* fname, size_t fsize){
     int pagesize;
     cp_fd tmp;
 
@@ -64,7 +75,7 @@ cp_fd cp_wr_open(char* fname, int flag, size_t fsize){
     tmp->buf  = (char*)malloc(BSIZE + pagesize);
     tmp->abuf = tmp->cbuf = (char*)((((size_t)tmp->buf + (size_t)pagesize - 1) / (size_t)pagesize) * (size_t)pagesize);
 
-    tmp->fd = open(fname, flag | O_TRUNC | O_DIRECT | O_SYNC, 0644);
+    tmp->fd = open(fname, O_CREAT | O_WRONLY | O_TRUNC | O_DIRECT | O_SYNC, 0644);
 
     return tmp;
 }
@@ -95,7 +106,7 @@ int cp_wr_close(cp_fd fd){
     return ret;
 }
 
-cp_fd cp_rd_open(char* fname, int flag, size_t fsize){
+cp_fd cp_rd_open(char* fname, int flag){
     int pagesize;
     cp_fd tmp;
     struct stat st;
@@ -107,7 +118,7 @@ cp_fd cp_rd_open(char* fname, int flag, size_t fsize){
     tmp->buf  = (char*)malloc(BSIZE + pagesize);
     tmp->abuf = tmp->cbuf = (char*)((((size_t)tmp->buf + (size_t)pagesize - 1) / (size_t)pagesize) * (size_t)pagesize);
 
-    tmp->fd = open(fname, flag | O_TRUNC | O_DIRECT | O_SYNC, 0644);
+    tmp->fd = open(fname, O_RDONLY | O_TRUNC | O_DIRECT | O_SYNC, 0644);
 
     return tmp;
 }
@@ -139,7 +150,7 @@ void cp_wr_open_(int *num){
     rank = 0;
 #endif
 
-    //buffer_init();
+    buffer_init();
 
     sprintf(fname, "oad_cp.%03d.%05d", rank, cp_file_num);
 
@@ -155,7 +166,7 @@ void cp_wr_open_(int *num){
 
     topen = getwalltime();
 
-    fd = cp_wr_open(fname, O_CREAT | O_WRONLY, FSIZE);
+    fd = cp_wr_open(fname, FSIZE);
 }
 
 void cp_rd_open_(int *num){
@@ -187,22 +198,19 @@ void cp_rd_open_(int *num){
 
     topen = getwalltime();
 
-    fd = cp_rd_open(fname, O_CREAT | O_RDONLY, FSIZE);
+    fd = cp_rd_open(fname);
 }
 
 void cpc_close_(){
     int rank;
     char fname[PATH_MAX];
     struct stat st;
-    double tclose;
-
-    close(fd);
-
-    tclose = getwalltime();
 
     //buffer_free();
     
     if (wr){
+        cp_wr_close(fd);
+
 #ifdef ALLOW_USE_MPI
         MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 #else
@@ -222,8 +230,10 @@ void cpc_close_(){
         store_time_all += tclose - topen;
     }
     else{
-        printf("#%%$: CP_Decom_Time_%d: %lf\n", cp_file_num, decompress_time);
-        printf("#%%$: CP_Rd_Time_%d: %lf\n", cp_file_num, rd_time); 
+        cp_rd_close(fd);
+
+        printf("#%%$: CP_Decom_Time_%d: %lf\n", cp_file_num, decompress_time - decompress_time_old);
+        printf("#%%$: CP_Rd_Time_%d: %lf\n", cp_file_num, rd_time - rd_time_old); 
 
         printf("#%%$: CP_Restore_Time_%d: %lf\n", cp_file_num, tclose - topen); 
 
@@ -245,74 +255,48 @@ void cpc_profile_(){
 
 
 
+
+
 void compresswr_real_(double *R, int* size  ) {
     //printf("Write %d bytes from %llx\n", *size, R);
-    t1 = getwalltime();
-    write(fd, R, (size_t)(*size));
-    t2 = getwalltime();
-    wr_time += t2 - t1;
+    cp_write(fd, R, (size_t)(*size));
 }
 
 void compressrd_real_(double *D, int *size  ) {
     //printf("Read %d bytes to %llx\n", *size, D);
-    double t1, t2;
-    t1 = getwalltime();
-    read(fd, D, (size_t)(*size));
-    t2 = getwalltime();
-    rd_time += t2 - t1;
+    cp_read(fd, D, (size_t)(*size));
 }
 
 
 void compresswr_integer_(int *R, int* size  ) {
     //printf("Write %d bytes from %llx\n", *size, R);
-    t1 = getwalltime();
-    write(fd, R, (size_t)(*size));
-    t2 = getwalltime();
-    wr_time += t2 - t1;
+    cp_write(fd, R, (size_t)(*size));
 }
 
 void compressrd_integer_(int *D, int *size  ) {
     //printf("Read %d bytes to %llx\n", *size, D);
-    double t1, t2;
-    t1 = getwalltime();
-    read(fd, D, (size_t)(*size));
-    t2 = getwalltime();
-    rd_time += t2 - t1;
+    cp_read(fd, D, (size_t)(*size));
 }
 
 
 void compresswr_bool_(int *R, int* size  ) {
     //printf("Write %d bytes from %llx\n", *size, R);
-    t1 = getwalltime();
-    write(fd, R, (size_t)(*size));
-    t2 = getwalltime();
-    wr_time += t2 - t1;
+    cp_write(fd, R, (size_t)(*size));
 }
 
 void compressrd_bool_(int *D, int *size  ) {
     //printf("Read %d bytes to %llx\n", *size, D);
-    double t1, t2;
-    t1 = getwalltime();
-    read(fd, D, (size_t)(*size));
-    t2 = getwalltime();
-    rd_time += t2 - t1;
+    cp_read(fd, D, (size_t)(*size));
 }
 
 
 void compresswr_string_(char *R, int* size , long l ) {
     //printf("Write %d bytes from %llx\n", *size, R);
-    t1 = getwalltime();
-    write(fd, R, (size_t)(*size));
-    t2 = getwalltime();
-    wr_time += t2 - t1;
+    cp_write(fd, R, (size_t)(*size));
 }
 
 void compressrd_string_(char *D, int *size , long l ) {
     //printf("Read %d bytes to %llx\n", *size, D);
-    double t1, t2;
-    t1 = getwalltime();
-    read(fd, D, (size_t)(*size));
-    t2 = getwalltime();
-    rd_time += t2 - t1;
+    cp_read(fd, D, (size_t)(*size));
 }
 
