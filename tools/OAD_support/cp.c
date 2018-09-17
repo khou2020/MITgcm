@@ -2,7 +2,6 @@
 
 
 
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -131,7 +130,7 @@ void cp_rd_open_(int *num){
 
     fd = open(fname, O_CREAT | O_RDONLY, 0644);
 
-    read(fd, &dsize, sizeof(dsize));
+    //read(fd, &dsize, sizeof(dsize));
 
     wr = 0;
 }
@@ -285,7 +284,8 @@ inline void compressrd(void *D, int *size) {
     buffer_resize((size_t)*size);
 
     // Read from file
-    read(fd, buffer, dsize + sizeof(dsize));
+    read(fd, &dsize, sizeof(dsize));
+    read(fd, buffer, dsize);
 
     t2 = getwalltime();
 
@@ -321,11 +321,13 @@ inline void compressrd(void *D, int *size) {
     printf("Read: %lu -> %lu\n", dsize, infstream.total_out);
 
     // Size of next variable
-    dsize = *((int*)(buffer + dsize));
+    //dsize = *((int*)(buffer + dsize));
 
     decompress_time += t3 - t2;
     rd_time += t2 - t1;
 }
+
+
 
 
 
