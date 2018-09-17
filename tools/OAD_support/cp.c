@@ -92,7 +92,7 @@ void cp_wr_open_(int *num){
 
     topen = getwalltime();
 
-    fd = open(fname, O_CREAT | O_WRONLY, 0644);
+    fd = open(fname, O_CREAT | O_WRONLY | O_TRUNC, 0644);
 }
 
 void cp_rd_open_(int *num){
