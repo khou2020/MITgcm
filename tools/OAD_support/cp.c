@@ -94,7 +94,7 @@ void cp_wr_open_(int *num){
 
     topen = getwalltime();
 
-    fd = open(fname, O_CREAT | O_WRONLY | OTRUNC, 0644);
+    fd = open(fname, O_CREAT | O_WRONLY | O_TRUNC, 0644);
 }
 
 void cp_rd_open_(int *num){
@@ -334,7 +334,7 @@ inline void compressrd(void *D, int *size) {
 
 
 void compresswr_real_(double *R, int *size  ) {
-    if (size > THRESHOLD){
+    if (*size > THRESHOLD){
         compresswr(R, size);
     }
     else{
@@ -348,7 +348,7 @@ void compresswr_real_(double *R, int *size  ) {
 }
 
 void compressrd_real_(double *D, int *size  ) {
-    if (size > THRESHOLD){
+    if (*size > THRESHOLD){
         compressrd(D, size);
     }
     else{
@@ -363,7 +363,7 @@ void compressrd_real_(double *D, int *size  ) {
 
 
 void compresswr_integer_(int *R, int *size  ) {
-    if (size > THRESHOLD){
+    if (*size > THRESHOLD){
         compresswr(R, size);
     }
     else{
@@ -377,7 +377,7 @@ void compresswr_integer_(int *R, int *size  ) {
 }
 
 void compressrd_integer_(int *D, int *size  ) {
-    if (size > THRESHOLD){
+    if (*size > THRESHOLD){
         compressrd(D, size);
     }
     else{
@@ -392,7 +392,7 @@ void compressrd_integer_(int *D, int *size  ) {
 
 
 void compresswr_bool_(int *R, int *size  ) {
-    if (size > THRESHOLD){
+    if (*size > THRESHOLD){
         compresswr(R, size);
     }
     else{
@@ -406,7 +406,7 @@ void compresswr_bool_(int *R, int *size  ) {
 }
 
 void compressrd_bool_(int *D, int *size  ) {
-    if (size > THRESHOLD){
+    if (*size > THRESHOLD){
         compressrd(D, size);
     }
     else{
@@ -421,7 +421,7 @@ void compressrd_bool_(int *D, int *size  ) {
 
 
 void compresswr_string_(char *R, int *size , long l ) {
-    if (size > THRESHOLD){
+    if (*size > THRESHOLD){
         compresswr(R, size);
     }
     else{
@@ -435,7 +435,7 @@ void compresswr_string_(char *R, int *size , long l ) {
 }
 
 void compressrd_string_(char *D, int *size , long l ) {
-    if (size > THRESHOLD){
+    if (*size > THRESHOLD){
         compressrd(D, size);
     }
     else{

@@ -100,7 +100,7 @@ void cp_wr_open_(int *num){
 
     topen = getwalltime();
 
-    fd = open(fname, O_CREAT | O_WRONLY | OTRUNC, 0644);
+    fd = open(fname, O_CREAT | O_WRONLY | O_TRUNC, 0644);
 }
 
 void cp_rd_open_(int *num){
@@ -344,7 +344,7 @@ define(`CMP_REAL',changequote(`[', `]')dnl
 [dnl
 
 void compresswr_$1_($2 *R, int *size ifelse(`$3', `', `', `, $3') ) {
-    if (size > THRESHOLD){
+    if (*size > THRESHOLD){
         compresswr(R, size);
     }
     else{
@@ -358,7 +358,7 @@ void compresswr_$1_($2 *R, int *size ifelse(`$3', `', `', `, $3') ) {
 }
 
 void compressrd_$1_($2 *D, int *size ifelse(`$3', `', `', `, $3') ) {
-    if (size > THRESHOLD){
+    if (*size > THRESHOLD){
         compressrd(D, size);
     }
     else{
