@@ -7,6 +7,8 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <linux/limits.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <fcntl.h>
 #ifdef ALLOW_USE_MPI
 #include <mpi.h>
