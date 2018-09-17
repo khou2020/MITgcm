@@ -7,6 +7,8 @@ dnl
 
 
 
+
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -16,8 +18,10 @@ dnl
 #include <mpi.h>
 #endif
 #include <time.h>
+
+#define MAXITR 1024
 #define BSIZE 1048576
-     
+
 static int cp_file_num = 0;
 int cur_num;
 int fd;
@@ -26,8 +30,11 @@ int wr;
 size_t bsize;
 char *buffer;
 
-static double compress_time_all, decompress_time_all, wr_time_all, rd_time_all, store_time_all, restore_time_all;
 double compress_time, decompress_time, wr_time, rd_time;
+
+double times[MAXITR][10];
+unsigned long long fsize[MAXITR];
+static int max_itr;
 
 double topen;
 
@@ -85,9 +92,11 @@ void cp_wr_open_(int *num){
     wr_time = 0;
     rd_time = 0;
 
+    MPI_Barrier(MPI_COMM_WORLD);
+
     topen = getwalltime();
 
-    fd = open(fname, O_CREAT | O_WRONLY | O_TRUNC, 0644);
+    fd = open(fname, O_CREAT | O_WRONLY, 0644);
 }
 
 void cp_rd_open_(int *num){
@@ -118,66 +127,102 @@ void cp_rd_open_(int *num){
     wr_time = 0;
     rd_time = 0;
 
+    MPI_Barrier(MPI_COMM_WORLD);
+    
     topen = getwalltime();
 
     fd = open(fname, O_CREAT | O_RDONLY, 0644);
 }
 
 void cpc_close_(){
-    int rank;
+    int rank, np;
     char fname[PATH_MAX];
     struct stat st;
-    double tclose;
+    double tclose, tio;
+    unsigned long long size;
 
     //buffer_free();
     
     if (wr){
-        fsync(fd);
+        //fsync(fd);
         close(fd);
         
         tclose = getwalltime();
+        tio = tclose - topen;
+
+#ifdef ALLOW_USE_MPI
+        MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+        MPI_Comm_size(MPI_COMM_WORLD, &np);
+#else
+        rank = 0;
+        np = 1;
+#endif
+        sprintf(fname, "oad_cp.%03d.%05d", rank, cur_num);
+        stat(fname, &st);
+        size = (unsigned long long)st.st_size;
+
+        MPI_Reduce(&size, &(fsize[cur_num]), 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
+        MPI_Reduce(&tio, &(times[cur_num][0]), 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+        MPI_Reduce(&compress_time, &(times[cur_num][1]), 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+        MPI_Reduce(&wr_time, &(times[cur_num][2]), 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+        times[cur_num][1] /= np;
+        times[cur_num][2] /= np;
+    }
+    else{
+        close(fd);
+
+        tclose = getwalltime();
+        tio = tclose - topen;
+
+#ifdef ALLOW_USE_MPI
+        MPI_Comm_size(MPI_COMM_WORLD, &np);
+#else
+        np = 1;
+#endif
+
+        MPI_Reduce(&tio, &(times[cur_num][3]), 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+        MPI_Reduce(&decompress_time, &(times[cur_num][4]), 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+        MPI_Reduce(&rd_time, &(times[cur_num][5]), 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+        times[cur_num][4] /= np;
+        times[cur_num][5] /= np;
+    }
+
+    if (max_itr < cur_num){
+        max_itr = cur_num;
+    }
+}
+
+void cpc_profile_(){
+    int rank;
+    int i, j;
+    FILE* f;
 
 #ifdef ALLOW_USE_MPI
         MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 #else
         rank = 0;
 #endif
-        sprintf(fname, "oad_cp.%03d.%05d", rank, cur_num);
-        stat(fname, &st);
-        printf("#%%$: CP_Size_%d: %lld\n", cur_num, (long long)st.st_size);
 
-        printf("#%%$: CP_Com_Time_%d: %lf\n", cur_num, compress_time);
-        printf("#%%$: CP_Wr_Time_%d: %lf\n", cur_num, wr_time); 
-
-        printf("#%%$: CP_Store_Time_%d: %lf\n", cur_num, tclose - topen); 
-
-        compress_time_all += compress_time;
-        wr_time_all += wr_time;
-        store_time_all += tclose - topen;
+    if (rank == 0){
+        printf("Itr,\tstore_time,\tcom_time,\twr_time,\trestore_time,\tdecom_time,\trd_time,\tfsize\n");
+        for(i = 0; i <= max_itr; i++){
+            printf("%d,\t", i);
+            for (j = 0; j < 6; j++){
+                printf("%lf,\t", times[i][j]);
+            }
+            printf("%llu\n", fsize[i]);
+        }
+        f = fopen("profile_origin.csv", "w");
+        fprintf(f, "Itr,\tstore_time,\tcom_time,\twr_time,\trestore_time,\tdecom_time,\trd_time,\tfsize\n");
+        for(i = 0; i <= max_itr; i++){
+            fprintf(f, "%d,\t", i);
+            for (j = 0; j < 6; j++){
+                fprintf(f, "%lf,\t", times[i][j]);
+            }
+            fprintf(f, "%llu\n", fsize[i]);
+        }
+        fclose(f);
     }
-    else{
-        close(fd);
-
-        tclose = getwalltime();
-
-        printf("#%%$: CP_Decom_Time_%d: %lf\n", cur_num, decompress_time);
-        printf("#%%$: CP_Rd_Time_%d: %lf\n", cur_num, rd_time); 
-
-        printf("#%%$: CP_Restore_Time_%d: %lf\n", cur_num, tclose - topen); 
-
-        decompress_time_all += decompress_time;
-        rd_time_all += rd_time;
-        restore_time_all += tclose - topen;
-    }
-}
-
-void cpc_profile_(){
-    printf("#%%$: CP_Com_Time_All: %lf\n", compress_time_all);
-    printf("#%%$: CP_Wr_Time_All: %lf\n", wr_time_all); 
-    printf("#%%$: CP_Store_Time_All: %lf\n", store_time_all); 
-    printf("#%%$: CP_Decom_Time_All: %lf\n", decompress_time_all);
-    printf("#%%$: CP_Rd_Time_All: %lf\n", rd_time_all); 
-    printf("#%%$: CP_Restore_Time_All: %lf\n", restore_time_all); 
 }
 include(`foreach.m4')dnl
 include(`forloop.m4')dnl
