@@ -198,6 +198,7 @@ void cpc_profile_(){
     int rank;
     int i, j;
     FILE* f;
+    char *fname;
 
 #ifdef ALLOW_USE_MPI
         MPI_Comm_rank(MPI_COMM_WORLD, &rank);
