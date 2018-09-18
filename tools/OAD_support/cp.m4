@@ -219,7 +219,13 @@ void cpc_profile_(){
             }
             printf("%llu\n", fsize[i]);
         }
-        f = fopen("profile_origin.csv", "w");
+        fname = getenv("MITGCM_PROFILE_PATH");
+        if (fname != NULL){
+            f = fopen(fname, "w");
+        }
+        else{
+            f = fopen("profile_origin.csv", "w");
+        }
         fprintf(f, "Itr,\tstore_time,\tcom_time,\twr_time,\trestore_time,\tdecom_time,\trd_time,\tfsize\n");
         for(i = 0; i <= max_itr; i++){
             fprintf(f, "%d,\t", i);
