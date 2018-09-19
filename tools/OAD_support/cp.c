@@ -233,7 +233,7 @@ void cpc_profile_(){
     }
 }
 
-inline void compresswr(void *R, int *size) {
+void compresswr(void *R, int *size) {
     int err;
     double t1, t2, t3;
 
@@ -282,7 +282,7 @@ inline void compresswr(void *R, int *size) {
     wr_time += t3 - t2;
 }
 
-inline void compressrd(void *D, int *size) {
+void compressrd(void *D, int *size) {
     int err;
     double t1, t2, t3;
 
