@@ -43,11 +43,11 @@ CEOP
       INTEGER Nr
       PARAMETER (
      &           sNx =   1,
-     &           sNy =  32,
+     &           sNy =   256,
      &           OLx =   2,
      &           OLy =   2,
      &           nSx =   1,
-     &           nSy =   32,
+     &           nSy =   1,
      &           nPx =   1,
      &           nPy =   256,
      &           Nx  = sNx*nSx*nPx,
