@@ -62,6 +62,7 @@ void buffer_resize(size_t size){
 void cp_wr_open_(int *num){
     int rank;
     char fname[PATH_MAX]; 
+    char *envfname;
 
     if (*num > 0){
         cp_file_num = *num;
@@ -74,6 +75,14 @@ void cp_wr_open_(int *num){
 #endif
 
     //buffer_init();
+    
+    fname = getenv("MITGCM_PROFILE_PATH");
+    if (fname != NULL){
+        f = fopen(fname, "w");
+    }
+    else{
+        f = fopen("profile_origin.csv", "w");
+    }
 
     sprintf(fname, "oad_cp.%03d.%05d", rank, cp_file_num);
     cur_num = cp_file_num;
