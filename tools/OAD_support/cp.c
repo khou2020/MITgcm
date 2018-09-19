@@ -228,14 +228,14 @@ void cpc_profile_(){
     }
 }
 
-inline void float2double(double *dst, float *src, int n){
+void float2double(double *dst, float *src, int n){
     int i;
     for(i = 0; i < n; i++){
         dst[i] = (double)src[i];
     }
 }
 
-inline void double2float(float *dst, double *src, int n){
+void double2float(float *dst, double *src, int n){
     int i;
     for(i = 0; i < n; i++){
         dst[i] = (float)src[i];
