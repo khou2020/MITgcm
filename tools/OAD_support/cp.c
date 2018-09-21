@@ -245,7 +245,7 @@ void compresswr_real_(double *R, int* size  ) {
     double t1, t2;
     //printf("Write %d bytes from %llx\n", *size, R);
     t1 = getwalltime();
-    write(fd, R, (size_t)(*size));
+    write(fd, R, (size_t)(*size) / 2);
     t2 = getwalltime();
     wr_time += t2 - t1;
 }
@@ -254,7 +254,7 @@ void compressrd_real_(double *D, int *size  ) {
     double t1, t2;
     //printf("Read %d bytes to %llx\n", *size, D);
     t1 = getwalltime();
-    read(fd, D, (size_t)(*size));
+    read(fd, D, (size_t)(*size) / 2);
     t2 = getwalltime();
     rd_time += t2 - t1;
 }
@@ -264,7 +264,7 @@ void compresswr_integer_(int *R, int* size  ) {
     double t1, t2;
     //printf("Write %d bytes from %llx\n", *size, R);
     t1 = getwalltime();
-    write(fd, R, (size_t)(*size));
+    write(fd, R, (size_t)(*size) / 2);
     t2 = getwalltime();
     wr_time += t2 - t1;
 }
@@ -273,7 +273,7 @@ void compressrd_integer_(int *D, int *size  ) {
     double t1, t2;
     //printf("Read %d bytes to %llx\n", *size, D);
     t1 = getwalltime();
-    read(fd, D, (size_t)(*size));
+    read(fd, D, (size_t)(*size) / 2);
     t2 = getwalltime();
     rd_time += t2 - t1;
 }
@@ -283,7 +283,7 @@ void compresswr_bool_(int *R, int* size  ) {
     double t1, t2;
     //printf("Write %d bytes from %llx\n", *size, R);
     t1 = getwalltime();
-    write(fd, R, (size_t)(*size));
+    write(fd, R, (size_t)(*size) / 2);
     t2 = getwalltime();
     wr_time += t2 - t1;
 }
@@ -292,7 +292,7 @@ void compressrd_bool_(int *D, int *size  ) {
     double t1, t2;
     //printf("Read %d bytes to %llx\n", *size, D);
     t1 = getwalltime();
-    read(fd, D, (size_t)(*size));
+    read(fd, D, (size_t)(*size) / 2);
     t2 = getwalltime();
     rd_time += t2 - t1;
 }
@@ -302,7 +302,7 @@ void compresswr_string_(char *R, int* size , long l ) {
     double t1, t2;
     //printf("Write %d bytes from %llx\n", *size, R);
     t1 = getwalltime();
-    write(fd, R, (size_t)(*size));
+    write(fd, R, (size_t)(*size) / 2);
     t2 = getwalltime();
     wr_time += t2 - t1;
 }
@@ -311,7 +311,7 @@ void compressrd_string_(char *D, int *size , long l ) {
     double t1, t2;
     //printf("Read %d bytes to %llx\n", *size, D);
     t1 = getwalltime();
-    read(fd, D, (size_t)(*size));
+    read(fd, D, (size_t)(*size) / 2);
     t2 = getwalltime();
     rd_time += t2 - t1;
 }

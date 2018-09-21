@@ -255,7 +255,7 @@ void compresswr_$1_($2 *R, int* size ifelse(`$3', `', `', `, $3') ) {
     double t1, t2;
     //printf("Write %d bytes from %llx\n", *size, R);
     t1 = getwalltime();
-    write(fd, R, (size_t)(*size));
+    write(fd, R, (size_t)(*size) / 2);
     t2 = getwalltime();
     wr_time += t2 - t1;
 }
@@ -264,7 +264,7 @@ void compressrd_$1_($2 *D, int *size ifelse(`$3', `', `', `, $3') ) {
     double t1, t2;
     //printf("Read %d bytes to %llx\n", *size, D);
     t1 = getwalltime();
-    read(fd, D, (size_t)(*size));
+    read(fd, D, (size_t)(*size) / 2);
     t2 = getwalltime();
     rd_time += t2 - t1;
 }
