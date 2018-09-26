@@ -4,7 +4,6 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <unistd.h>
 #include <linux/limits.h>
 #include <fcntl.h>
 #ifdef ALLOW_USE_MPI
@@ -12,6 +11,9 @@
 #endif
 #include <string.h>
 #include <time.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 #define BSIZE (1 * 1024 * 1024)
 #define FSIZE (100 * 1024 * 1024)
@@ -19,10 +21,10 @@
 typedef struct cp_fd{
     int fd;
     char *buf, *abuf, *cbuf;
-};
+} cp_fd;
 
 static int cp_file_num = 0;
-int fd;
+cp_fd fd;
 int wr;
 
 size_t bsize, bused;
@@ -31,7 +33,7 @@ void *buffer, *abuffer;
 static double compress_time_all, decompress_time_all, wr_time_all, rd_time_all, store_time_all, restore_time_all;
 double compress_time, decompress_time, wr_time, rd_time;
 
-double topen;
+double topen, tclose;
 
 double getwalltime(){
     struct timespec tp;
@@ -47,7 +49,7 @@ void buffer_init(){
 
     pagesize = getpagesize();
     buffer = malloc(BSIZE + pagesize);
-    abuffer=(void*)((((unsigned long long)realbuff+(unsigned long long)pagesize-1)/(unsigned long long)pagesize)*(unsigned long long)pagesize);
+    abuffer=(void*)((((unsigned long long)buffer+(unsigned long long)pagesize-1)/(unsigned long long)pagesize)*(unsigned long long)pagesize);
 
     bsize = BSIZE;
     buffer = (float*)malloc(bsize);
@@ -69,20 +71,22 @@ void buffer_resize(size_t size){
 
 cp_fd cp_wr_open(char* fname, size_t fsize){
     int pagesize;
-    cp_fd tmp;
+    cp_fd fd;
 
     pagesize = getpagesize();
-    tmp->buf  = (char*)malloc(BSIZE + pagesize);
-    tmp->abuf = tmp->cbuf = (char*)((((size_t)tmp->buf + (size_t)pagesize - 1) / (size_t)pagesize) * (size_t)pagesize);
+    fd.buf  = (char*)malloc(BSIZE + pagesize);
+    fd.abuf = fd.cbuf = (char*)((((size_t)fd.buf + (size_t)pagesize - 1) / (size_t)pagesize) * (size_t)pagesize);
 
-    tmp->fd = open(fname, O_CREAT | O_WRONLY | O_TRUNC | O_DIRECT | O_SYNC, 0644);
+    topen = getwalltime();
 
-    return tmp;
+    fd.fd = open(fname, O_CREAT | O_WRONLY | O_TRUNC | O_DIRECT | O_SYNC, 0644);
+
+    return fd;
 }
 
 int cp_write(cp_fd fd, void *data, size_t size){
-    memcpy(fd->cbuf, data, size);
-    fd->cbuf += size;
+    memcpy(fd.cbuf, data, size);
+    fd.cbuf += size;
 }
 
 int cp_wr_close(cp_fd fd){
@@ -91,47 +95,60 @@ int cp_wr_close(cp_fd fd){
     ssize_t ioret;
 
     wsize = 0;
-    while(fd->abuf < fd->cbuf){
-        ioret = write(fd->fd, fd->abuf, fd->cbuf - fd->abuf);
+    while(fd.abuf < fd.cbuf){
+        ioret = write(fd.fd, fd.abuf, fd.cbuf - fd.abuf);
         if (ioret <= 0){
             ret = -1;
         }
-        fd->abuf += ioret;
+        fd.abuf += ioret;
     }
     
-    close(tmp->fd);
+    close(fd.fd);
+
+    tclose = getwalltime();
     
-    free(tmp->buf);
+    free(fd.buf);
 
     return ret;
 }
 
-cp_fd cp_rd_open(char* fname, int flag){
+cp_fd cp_rd_open(char* fname){
     int pagesize;
-    cp_fd tmp;
+    cp_fd fd;
     struct stat st;
+    double st;
 
     stat(fname, &st);
     printf("#%%$: CP_Size_%d: %lld\n", cp_file_num, (long long)st.st_size);
 
     pagesize = getpagesize();
-    tmp->buf  = (char*)malloc(BSIZE + pagesize);
-    tmp->abuf = tmp->cbuf = (char*)((((size_t)tmp->buf + (size_t)pagesize - 1) / (size_t)pagesize) * (size_t)pagesize);
+    fd.buf  = (char*)malloc(BSIZE + pagesize);
+    fd.abuf = fd.cbuf = (char*)((((size_t)fd.buf + (size_t)pagesize - 1) / (size_t)pagesize) * (size_t)pagesize);
 
-    tmp->fd = open(fname, O_RDONLY | O_TRUNC | O_DIRECT | O_SYNC, 0644);
+    topen = getwalltime();
 
-    return tmp;
+    fd.fd = open(fname, O_RDONLY | O_TRUNC | O_DIRECT | O_SYNC, 0644);
+
+    st = getwalltime();
+
+    read(fd.fd, fd.abuf, st.st_size);
+
+    rd_time = getwalltime() - st;
+
+    return fd;
 }
 
 int cp_read(cp_fd fd, void *data, size_t size){
-    memcpy(data, fd->cbuf, size);
-    fd->cbuf += size;
+    memcpy(data, fd.cbuf, size);
+    fd.cbuf += size;
 }
 
 int cp_rd_close(cp_fd fd){   
-    close(tmp->fd);
+    close(fd.fd);
+
+    tclose = getwalltime();
     
-    free(tmp->buf);
+    free(fd.buf);
 
     return 0;
 }
@@ -164,8 +181,6 @@ void cp_wr_open_(int *num){
     wr_time = 0;
     rd_time = 0;
 
-    topen = getwalltime();
-
     fd = cp_wr_open(fname, FSIZE);
 }
 
@@ -196,8 +211,6 @@ void cp_rd_open_(int *num){
     wr_time = 0;
     rd_time = 0;
 
-    topen = getwalltime();
-
     fd = cp_rd_open(fname);
 }
 
@@ -216,9 +229,9 @@ void cpc_close_(){
 #else
         rank = 0;
 #endif
-        sprintf(fname, "oad_cp.%03d.%05d", rank, cp_file_num - 1);
-        stat(fname, &st);
-        printf("#%%$: CP_Size_%d: %lld\n", cp_file_num - 1, (long long)st.st_size);
+        //sprintf(fname, "oad_cp.%03d.%05d", rank, cp_file_num - 1);
+        //stat(fname, &st);
+        //printf("#%%$: CP_Size_%d: %lld\n", cp_file_num - 1, (long long)st.st_size);
 
         printf("#%%$: CP_Com_Time_%d: %lf\n", cp_file_num - 1, compress_time);
         printf("#%%$: CP_Wr_Time_%d: %lf\n", cp_file_num - 1, wr_time); 
