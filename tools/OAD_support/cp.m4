@@ -88,7 +88,7 @@ cp_fd* cp_wr_open(char* fname, size_t fsize){
     fd = malloc(sizeof(cp_fd));
 
     pagesize = getpagesize();
-    fd->buf  = (char*)malloc(BSIZE + pagesize);
+    fd->buf  = (char*)malloc(FSIZE + pagesize);
     fd->abuf = fd->cbuf = (char*)((((size_t)fd->buf + (size_t)pagesize - 1) / (size_t)pagesize) * (size_t)pagesize);
 
     topen = getwalltime();
@@ -147,7 +147,7 @@ cp_fd* cp_rd_open(char* fname){
     stat(fname, &st);
 
     pagesize = getpagesize();
-    fd->buf  = (char*)malloc(BSIZE + pagesize);
+    fd->buf  = (char*)malloc(FSIZE + pagesize);
     fd->abuf = fd->cbuf = (char*)((((size_t)fd->buf + (size_t)pagesize - 1) / (size_t)pagesize) * (size_t)pagesize);
 
     topen = getwalltime();

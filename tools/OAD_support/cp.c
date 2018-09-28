@@ -1,5 +1,4 @@
 
-
 #define _GNU_SOURCE
 
 #include <stdlib.h>
@@ -83,7 +82,7 @@ cp_fd* cp_wr_open(char* fname, size_t fsize){
     fd = malloc(sizeof(cp_fd));
 
     pagesize = getpagesize();
-    fd->buf  = (char*)malloc(BSIZE + pagesize);
+    fd->buf  = (char*)malloc(FSIZE + pagesize);
     fd->abuf = fd->cbuf = (char*)((((size_t)fd->buf + (size_t)pagesize - 1) / (size_t)pagesize) * (size_t)pagesize);
 
     topen = getwalltime();
@@ -142,7 +141,7 @@ cp_fd* cp_rd_open(char* fname){
     stat(fname, &st);
 
     pagesize = getpagesize();
-    fd->buf  = (char*)malloc(BSIZE + pagesize);
+    fd->buf  = (char*)malloc(FSIZE + pagesize);
     fd->abuf = fd->cbuf = (char*)((((size_t)fd->buf + (size_t)pagesize - 1) / (size_t)pagesize) * (size_t)pagesize);
 
     topen = getwalltime();
@@ -341,6 +340,9 @@ void cpc_profile_(){
 
 
 
+
+
+
 void compresswr_real_(double *R, int* size  ) {
     double t1, t2;
     //printf("Write %d bytes from %llx\n", *size, R);
@@ -348,7 +350,6 @@ void compresswr_real_(double *R, int* size  ) {
 }
 
 void compressrd_real_(double *D, int *size  ) {
-    //printf("Read %d bytes to %llx\n", *size, D);
     cp_read(fd, D, (size_t)(*size));
 }
 
@@ -360,7 +361,6 @@ void compresswr_integer_(int *R, int* size  ) {
 }
 
 void compressrd_integer_(int *D, int *size  ) {
-    //printf("Read %d bytes to %llx\n", *size, D);
     cp_read(fd, D, (size_t)(*size));
 }
 
@@ -372,7 +372,6 @@ void compresswr_bool_(int *R, int* size  ) {
 }
 
 void compressrd_bool_(int *D, int *size  ) {
-    //printf("Read %d bytes to %llx\n", *size, D);
     cp_read(fd, D, (size_t)(*size));
 }
 
@@ -384,7 +383,6 @@ void compresswr_string_(char *R, int* size , long l ) {
 }
 
 void compressrd_string_(char *D, int *size , long l ) {
-    //printf("Read %d bytes to %llx\n", *size, D);
     cp_read(fd, D, (size_t)(*size));
 }
 
