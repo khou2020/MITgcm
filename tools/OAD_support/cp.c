@@ -5,6 +5,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <linux/limits.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <fcntl.h>
 #ifdef ALLOW_USE_MPI
 #include <mpi.h>
@@ -17,6 +19,7 @@
 
 #define BSIZE (1 * 1024 * 1024)
 #define FSIZE (100 * 1024 * 1024)
+#define MAXITR 1024
 
 typedef struct cp_fd{
     int fd;
@@ -24,16 +27,20 @@ typedef struct cp_fd{
 } cp_fd;
 
 static int cp_file_num = 0;
-cp_fd fd;
+cp_fd *fd;
+
+int cur_num;
 int wr;
 
 size_t bsize, bused;
 void *buffer, *abuffer;
 
-static double compress_time_all, decompress_time_all, wr_time_all, rd_time_all, store_time_all, restore_time_all;
 double compress_time, decompress_time, wr_time, rd_time;
 
 double topen, tclose;
+double times[MAXITR][10];
+unsigned long long fsize[MAXITR];
+static int max_itr;
 
 double getwalltime(){
     struct timespec tp;
@@ -69,86 +76,104 @@ void buffer_resize(size_t size){
     }
 } 
 
-cp_fd cp_wr_open(char* fname, size_t fsize){
+cp_fd* cp_wr_open(char* fname, size_t fsize){
     int pagesize;
-    cp_fd fd;
+    cp_fd *fd;
+
+    fd = malloc(sizeof(cp_fd));
 
     pagesize = getpagesize();
-    fd.buf  = (char*)malloc(BSIZE + pagesize);
-    fd.abuf = fd.cbuf = (char*)((((size_t)fd.buf + (size_t)pagesize - 1) / (size_t)pagesize) * (size_t)pagesize);
+    fd->buf  = (char*)malloc(BSIZE + pagesize);
+    fd->abuf = fd->cbuf = (char*)((((size_t)fd->buf + (size_t)pagesize - 1) / (size_t)pagesize) * (size_t)pagesize);
 
     topen = getwalltime();
 
-    fd.fd = open(fname, O_CREAT | O_WRONLY | O_TRUNC | O_DIRECT | O_SYNC, 0644);
+    fd->fd = open(fname, O_CREAT | O_WRONLY | O_TRUNC | O_DIRECT | O_SYNC, 0644);
 
     return fd;
 }
 
-int cp_write(cp_fd fd, void *data, size_t size){
-    memcpy(fd.cbuf, data, size);
-    fd.cbuf += size;
+int cp_write(cp_fd *fd, void *data, size_t size){
+    memcpy(fd->cbuf, data, size);
+    fd->cbuf += size;
 }
 
-int cp_wr_close(cp_fd fd){
+int cp_wr_close(cp_fd *fd){
     int ret = 0;
     off_t wsize;
     ssize_t ioret;
+    double t1;
+
+#ifdef ALLOW_USE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+#endif
+
+    t1 = getwalltime();
 
     wsize = 0;
-    while(fd.abuf < fd.cbuf){
-        ioret = write(fd.fd, fd.abuf, fd.cbuf - fd.abuf);
+    while(fd->abuf < fd->cbuf){
+        ioret = write(fd->fd, fd->abuf, fd->cbuf - fd->abuf);
         if (ioret <= 0){
             ret = -1;
         }
-        fd.abuf += ioret;
+        fd->abuf += ioret;
     }
     
-    close(fd.fd);
+    wr_time = getwalltime() - t1;
+
+    close(fd->fd);
 
     tclose = getwalltime();
     
-    free(fd.buf);
+    free(fd->buf);
+    free(fd);
 
     return ret;
 }
 
-cp_fd cp_rd_open(char* fname){
+cp_fd* cp_rd_open(char* fname){
     int pagesize;
-    cp_fd fd;
+    cp_fd *fd;
     struct stat st;
-    double st;
+    double t1;
+
+    fd = malloc(sizeof(cp_fd));
 
     stat(fname, &st);
-    printf("#%%$: CP_Size_%d: %lld\n", cp_file_num, (long long)st.st_size);
 
     pagesize = getpagesize();
-    fd.buf  = (char*)malloc(BSIZE + pagesize);
-    fd.abuf = fd.cbuf = (char*)((((size_t)fd.buf + (size_t)pagesize - 1) / (size_t)pagesize) * (size_t)pagesize);
+    fd->buf  = (char*)malloc(BSIZE + pagesize);
+    fd->abuf = fd->cbuf = (char*)((((size_t)fd->buf + (size_t)pagesize - 1) / (size_t)pagesize) * (size_t)pagesize);
 
     topen = getwalltime();
 
-    fd.fd = open(fname, O_RDONLY | O_TRUNC | O_DIRECT | O_SYNC, 0644);
+    fd->fd = open(fname, O_RDONLY | O_TRUNC | O_DIRECT | O_SYNC, 0644);
 
-    st = getwalltime();
+#ifdef ALLOW_USE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+#endif
 
-    read(fd.fd, fd.abuf, st.st_size);
+    t1 = getwalltime();
 
-    rd_time = getwalltime() - st;
+    read(fd->fd, fd->abuf, st.st_size);
+
+    rd_time = getwalltime() - t1;
 
     return fd;
 }
 
-int cp_read(cp_fd fd, void *data, size_t size){
-    memcpy(data, fd.cbuf, size);
-    fd.cbuf += size;
+int cp_read(cp_fd *fd, void *data, size_t size){
+    memcpy(data, fd->cbuf, size);
+    fd->cbuf += size;
 }
 
-int cp_rd_close(cp_fd fd){   
-    close(fd.fd);
+int cp_rd_close(cp_fd *fd){   
+    close(fd->fd);
 
     tclose = getwalltime();
     
-    free(fd.buf);
+    free(fd->buf);
+    free(fd);
 
     return 0;
 }
@@ -170,6 +195,7 @@ void cp_wr_open_(int *num){
     buffer_init();
 
     sprintf(fname, "oad_cp.%03d.%05d", rank, cp_file_num);
+    cur_num = cp_file_num;
 
     if (*num <= 0){
         cp_file_num++;
@@ -204,6 +230,7 @@ void cp_rd_open_(int *num){
     //buffer_init();
     
     sprintf(fname, "oad_cp.%03d.%05d", rank, cp_file_num);
+    cur_num = cp_file_num;
 
     wr = 0;
     compress_time = 0;
@@ -215,9 +242,11 @@ void cp_rd_open_(int *num){
 }
 
 void cpc_close_(){
-    int rank;
+    int rank, np;
     char fname[PATH_MAX];
     struct stat st;
+    double tio;
+    unsigned long long size;
 
     //buffer_free();
     
@@ -226,43 +255,85 @@ void cpc_close_(){
 
 #ifdef ALLOW_USE_MPI
         MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+        MPI_Comm_size(MPI_COMM_WORLD, &np);
 #else
         rank = 0;
+        np = 1;
 #endif
-        //sprintf(fname, "oad_cp.%03d.%05d", rank, cp_file_num - 1);
-        //stat(fname, &st);
-        //printf("#%%$: CP_Size_%d: %lld\n", cp_file_num - 1, (long long)st.st_size);
+        sprintf(fname, "oad_cp.%03d.%05d", rank, cur_num);
+        stat(fname, &st);
+        size = (unsigned long long)st.st_size;
 
-        printf("#%%$: CP_Com_Time_%d: %lf\n", cp_file_num - 1, compress_time);
-        printf("#%%$: CP_Wr_Time_%d: %lf\n", cp_file_num - 1, wr_time); 
+        tio = tclose - topen;
 
-        printf("#%%$: CP_Store_Time_%d: %lf\n", cp_file_num - 1, tclose - topen); 
-
-        compress_time_all += compress_time;
-        wr_time_all += wr_time;
-        store_time_all += tclose - topen;
+        MPI_Reduce(&size, &(fsize[cur_num]), 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
+        MPI_Reduce(&tio, &(times[cur_num][0]), 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+        MPI_Reduce(&compress_time, &(times[cur_num][1]), 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+        MPI_Reduce(&wr_time, &(times[cur_num][2]), 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+        times[cur_num][1] /= np;
+        times[cur_num][2] /= np;
     }
     else{
         cp_rd_close(fd);
 
-        printf("#%%$: CP_Decom_Time_%d: %lf\n", cp_file_num, decompress_time - decompress_time_old);
-        printf("#%%$: CP_Rd_Time_%d: %lf\n", cp_file_num, rd_time - rd_time_old); 
+        tio = tclose - topen;
 
-        printf("#%%$: CP_Restore_Time_%d: %lf\n", cp_file_num, tclose - topen); 
+#ifdef ALLOW_USE_MPI
+        MPI_Comm_size(MPI_COMM_WORLD, &np);
+#else
+        np = 1;
+#endif
 
-        decompress_time_all += decompress_time;
-        rd_time_all += rd_time;
-        restore_time_all += tclose - topen;
+        MPI_Reduce(&tio, &(times[cur_num][3]), 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+        MPI_Reduce(&decompress_time, &(times[cur_num][4]), 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+        MPI_Reduce(&rd_time, &(times[cur_num][5]), 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+        times[cur_num][4] /= np;
+        times[cur_num][5] /= np;
+    }
+
+    if (max_itr < cur_num){
+        max_itr = cur_num;
     }
 }
 
 void cpc_profile_(){
-    printf("#%%$: CP_Com_Time_All: %lf\n", compress_time_all);
-    printf("#%%$: CP_Wr_Time_All: %lf\n", wr_time_all); 
-    printf("#%%$: CP_Store_Time_All: %lf\n", store_time_all); 
-    printf("#%%$: CP_Decom_Time_All: %lf\n", decompress_time_all);
-    printf("#%%$: CP_Rd_Time_All: %lf\n", rd_time_all); 
-    printf("#%%$: CP_Restore_Time_All: %lf\n", restore_time_all); 
+    int rank;
+    int i, j;
+    FILE* f;
+    char *fname;
+
+#ifdef ALLOW_USE_MPI
+        MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+#else
+        rank = 0;
+#endif
+
+    if (rank == 0){
+        printf("Itr,\tstore_time,\tcom_time,\twr_time,\trestore_time,\tdecom_time,\trd_time,\tfsize\n");
+        for(i = 0; i <= max_itr; i++){
+            printf("%d,\t", i);
+            for (j = 0; j < 6; j++){
+                printf("%lf,\t", times[i][j]);
+            }
+            printf("%llu\n", fsize[i]);
+        }
+        fname = getenv("MITGCM_PROFILE_PATH");
+        if (fname != NULL){
+            f = fopen(fname, "w");
+        }
+        else{
+            f = fopen("profile_origin.csv", "w");
+        }
+        fprintf(f, "Itr,\tstore_time,\tcom_time,\twr_time,\trestore_time,\tdecom_time,\trd_time,\tfsize\n");
+        for(i = 0; i <= max_itr; i++){
+            fprintf(f, "%d,\t", i);
+            for (j = 0; j < 6; j++){
+                fprintf(f, "%lf,\t", times[i][j]);
+            }
+            fprintf(f, "%llu\n", fsize[i]);
+        }
+        fclose(f);
+    }
 }
 
 
@@ -271,6 +342,7 @@ void cpc_profile_(){
 
 
 void compresswr_real_(double *R, int* size  ) {
+    double t1, t2;
     //printf("Write %d bytes from %llx\n", *size, R);
     cp_write(fd, R, (size_t)(*size));
 }
@@ -282,6 +354,7 @@ void compressrd_real_(double *D, int *size  ) {
 
 
 void compresswr_integer_(int *R, int* size  ) {
+    double t1, t2;
     //printf("Write %d bytes from %llx\n", *size, R);
     cp_write(fd, R, (size_t)(*size));
 }
@@ -293,6 +366,7 @@ void compressrd_integer_(int *D, int *size  ) {
 
 
 void compresswr_bool_(int *R, int* size  ) {
+    double t1, t2;
     //printf("Write %d bytes from %llx\n", *size, R);
     cp_write(fd, R, (size_t)(*size));
 }
@@ -304,6 +378,7 @@ void compressrd_bool_(int *D, int *size  ) {
 
 
 void compresswr_string_(char *R, int* size , long l ) {
+    double t1, t2;
     //printf("Write %d bytes from %llx\n", *size, R);
     cp_write(fd, R, (size_t)(*size));
 }
