@@ -186,6 +186,7 @@ int cp_rd_close(cp_fd *fd){
 void cp_wr_open_(int *num){
     int rank;
     char fname[PATH_MAX]; 
+    char *envfname;
 
     if (*num > 0){
         cp_file_num = *num;
@@ -197,9 +198,19 @@ void cp_wr_open_(int *num){
     rank = 0;
 #endif
 
+<<<<<<< HEAD
     buffer_init();
 
     sprintf(fname, "oad_cp.%03d.%05d", rank, cp_file_num);
+=======
+    //buffer_init();
+    
+    envfname = getenv("MITGCM_OAD_CP_PREFIX");
+    if (envfname == NULL){
+        envfname = "oad_cp";
+    }
+    sprintf(fname, "%s.%03d.%05d", envfname, rank, cp_file_num);
+>>>>>>> usec
     cur_num = cp_file_num;
 
     if (*num <= 0){
@@ -218,6 +229,7 @@ void cp_wr_open_(int *num){
 void cp_rd_open_(int *num){
     int rank;
     char fname[PATH_MAX];
+    char *envfname;
 
     if (*num > 0){
         cp_file_num = *num;
@@ -234,7 +246,11 @@ void cp_rd_open_(int *num){
 
     //buffer_init();
     
-    sprintf(fname, "oad_cp.%03d.%05d", rank, cp_file_num);
+    envfname = getenv("MITGCM_OAD_CP_PREFIX");
+    if (envfname == NULL){
+        envfname = "oad_cp";
+    }
+    sprintf(fname, "%s.%03d.%05d", envfname, rank, cp_file_num);
     cur_num = cp_file_num;
 
     wr = 0;
