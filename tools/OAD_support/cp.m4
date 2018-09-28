@@ -198,11 +198,6 @@ void cp_wr_open_(int *num){
     rank = 0;
 #endif
 
-<<<<<<< HEAD
-    buffer_init();
-
-    sprintf(fname, "oad_cp.%03d.%05d", rank, cp_file_num);
-=======
     //buffer_init();
     
     envfname = getenv("MITGCM_OAD_CP_PREFIX");
@@ -210,7 +205,6 @@ void cp_wr_open_(int *num){
         envfname = "oad_cp";
     }
     sprintf(fname, "%s.%03d.%05d", envfname, rank, cp_file_num);
->>>>>>> usec
     cur_num = cp_file_num;
 
     if (*num <= 0){
