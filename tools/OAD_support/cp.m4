@@ -152,7 +152,7 @@ cp_fd* cp_rd_open(char* fname){
 
     topen = getwalltime();
 
-    fd->fd = open(fname, O_RDONLY | O_TRUNC | O_DIRECT | O_SYNC, 0644);
+    fd->fd = open(fname, O_RDONLY | O_DIRECT | O_SYNC, 0644);
 
 #ifdef ALLOW_USE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
