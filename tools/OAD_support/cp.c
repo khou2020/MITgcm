@@ -13,11 +13,12 @@
 #ifdef ALLOW_USE_MPI
 #include <mpi.h>
 #endif
-#include "zfp.h"
+#include "sz.h"
+#include <string.h>
 #include <time.h>
 
 #define MAXITR 1024
-#define BSIZE 1048576
+#define BSIZE 1048576 * 100
 #define THRESHOLD 1024
 
 static int cp_file_num = 0;
@@ -65,6 +66,7 @@ void cp_wr_open_(int *num){
     int rank;
     char fname[PATH_MAX]; 
     char *envfname;
+    sz_params sz;
 
     if (*num > 0){
         cp_file_num = *num;
@@ -77,6 +79,21 @@ void cp_wr_open_(int *num){
 #endif
 
     buffer_init();
+
+    memset(&sz, 0, sizeof(sz_params));
+    sz.sol_ID = SZ;
+    sz.sampleDistance = 100;
+    sz.quantization_intervals = 0;
+    sz.max_quant_intervals = 65536;
+    sz.predThreshold = 0.98;
+    sz.szMode = SZ_BEST_COMPRESSION;
+    sz.losslessCompressor = ZSTD_COMPRESSOR;
+    sz.gzipMode = 1;
+    sz.errorBoundMode = ABS;
+    sz.absErrBound = 1E-3;
+    sz.relBoundRatio = 1E-5;
+
+    SZ_Init_Params(&sz);
 
     envfname = getenv("MITGCM_OAD_CP_PREFIX");
     if (envfname == NULL){
@@ -106,6 +123,7 @@ void cp_rd_open_(int *num){
     int rank;
     char fname[PATH_MAX];
     char *envfname;
+    sz_params sz;
 
     if (*num > 0){
         cp_file_num = *num;
@@ -121,6 +139,21 @@ void cp_rd_open_(int *num){
 #endif
 
     buffer_init();
+
+    memset(&sz, 0, sizeof(sz_params));
+    sz.sol_ID = SZ;
+    sz.sampleDistance = 100;
+    sz.quantization_intervals = 0;
+    sz.max_quant_intervals = 65536;
+    sz.predThreshold = 0.98;
+    sz.szMode = SZ_BEST_COMPRESSION;
+    sz.losslessCompressor = ZSTD_COMPRESSOR;
+    sz.gzipMode = 1;
+    sz.errorBoundMode = ABS;
+    sz.absErrBound = 1E-3;
+    sz.relBoundRatio = 1E-5;
+
+    SZ_Init_Params(&sz);
     
     envfname = getenv("MITGCM_OAD_CP_PREFIX");
     if (envfname == NULL){
@@ -200,6 +233,8 @@ void cpc_close_(){
     }
 
     buffer_free();
+
+    SZ_Finalize();
 }
 
 void cpc_profile_(){
@@ -248,73 +283,51 @@ void cpc_profile_(){
 
 
 void compresswr_real(void *data, size_t size, int dim, int *shape){
-    zfp_stream *zfp;
-    zfp_type type = zfp_type_double;                          
-    zfp_field *field;
-    bitstream *stream;
-    size_t bufsize;  
-    size_t zfpsize;
+    int i;
     double t1, t2, t3;
+    unsigned char *buf
+    size_t outsize;
+    size_t r[5];
 
     t1 = getwalltime();
 
-    // array metadata
-    if (dim == 1){
-        field = zfp_field_1d(data, type, (unsigned int)(shape[0]) );
-    }
-    else if (dim == 2){
-        field = zfp_field_2d(data, type, (unsigned int)(shape[0]), (unsigned int)(shape[1]));
-    }
-    else{
-        int i;
-        unsigned int totalsize = 1;
-
-        for(i = 2; i < dim; i++){
-            totalsize *= shape[i];
+    for(i = 0; i < 5; i++){
+        if (i < dim){
+            r[i] = shape[i];
         }
-        field = zfp_field_3d(data, type, (unsigned int)(shape[0]), (unsigned int)(shape[1]), totalsize);
+        else{
+            r[i] = 0;
+        }
+    }
+    for(i = 5; i < dim; i++){
+        r[4] *= shape[i];
     }
 
-    // compressed stream and parameters
-    zfp = zfp_stream_open(NULL);   
-
-    // set tolerance for fixed-accuracy mode           
-    zfp_stream_set_accuracy(zfp, 0.0001);                     
-
-    // allocate buffer for compressed data
-    bufsize = zfp_stream_maximum_size(zfp, field);    
-    buffer_resize((size_t)bufsize);              
-
-    // associate bit stream with allocated buffer
-    stream = stream_open((void*)buffer, bufsize);      
-    zfp_stream_set_bit_stream(zfp, stream);                  
-    zfp_stream_rewind(zfp);                  
-
-    // compress array
-    zfpsize = zfp_compress(zfp, field);               
+    buf = SZ_compress(SZ_DOUBLE, data, &outSize, r[4], r[3], r[2], r[1], r[0]);
 
     t2 = getwalltime();
 
-    write(fd, &zfpsize, sizeof(zfpsize));
-    write(fd, (void*)buffer, zfpsize);
+    write(fd, &outsize, sizeof(outsize));
+    write(fd, (void*)buf, outsize);
 
     t3 = getwalltime();
 
     compress_time += t2 - t1;
     wr_time += t3 - t2;
 
+    free(buf);
+
     //printf("Write %zu -> %zu\n", size, zfpsize);
 }
 
 void compressrd_real(void *data, size_t size, int dim, int *shape){
-    zfp_stream *zfp;
     int ret;
-    zfp_type type = zfp_type_double;                          
-    zfp_field *field;
-    bitstream *stream;
     size_t bufsize;  
     size_t zfpsize;
     double t1, t2, t3;
+    unsigned char *out
+    size_t outsize;
+    size_t r[5];
     
     t1 = getwalltime();
 
@@ -325,38 +338,24 @@ void compressrd_real(void *data, size_t size, int dim, int *shape){
 
     t2 = getwalltime();
 
-    // array metadata
-    if (dim == 1){
-        field = zfp_field_1d(data, type, (unsigned int)(shape[0]) );
-    }
-    else if (dim == 2){
-        field = zfp_field_2d(data, type, (unsigned int)(shape[0]), (unsigned int)(shape[1]));
-    }
-    else{
-        int i;
-        unsigned int totalsize = 1;
-
-        for(i = 2; i < dim; i++){
-            totalsize *= shape[i];
+    for(i = 0; i < 5; i++){
+        if (i < dim){
+            r[i] = shape[i];
         }
-        field = zfp_field_3d(data, type, (unsigned int)(shape[0]), (unsigned int)(shape[1]), totalsize);
+        else{
+            r[i] = 0;
+        }
+    }
+    for(i = 5; i < dim; i++){
+        r[4] *= shape[i];
     }
 
-    // compressed stream and parameters
-    zfp = zfp_stream_open(NULL);   
-
-    // set tolerance for fixed-accuracy mode           
-    zfp_stream_set_accuracy(zfp, 0.0001);                      
-
-
-    // associate bit stream with allocated buffer
-    stream = stream_open((void*)buffer, bufsize);      
-    zfp_stream_set_bit_stream(zfp, stream);                  
-    zfp_stream_rewind(zfp);                  
-
-    ret = zfp_decompress(zfp, field);
+    out = SZ_decompress(SZ_DOUBLE, buffer, bufsize, r[4], r[3], r[2], r[1], r[0]);
 
     t3 = getwalltime();
+
+    memcpy(data, out, size);
+    free(out);
 
     decompress_time += t3 - t2;
     rd_time += t2 - t1;
@@ -369,7 +368,7 @@ void compressrd_real(void *data, size_t size, int dim, int *shape){
     }
 }
 
-
+/*
 void compresswr_int(void *data, size_t size, int dim, int *shape){
     zfp_stream *zfp;
     zfp_type type = zfp_type_int32;                          
@@ -491,7 +490,7 @@ void compressrd_int(void *data, size_t size, int dim, int *shape){
         //printf("Read %zu -> %zu\n", bufsize, size);
     }
 }
-
+*/
 
 
 
