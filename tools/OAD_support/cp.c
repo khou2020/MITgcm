@@ -1,8 +1,6 @@
 
 
 
-
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -285,13 +283,13 @@ void cpc_profile_(){
 void compresswr_real(void *data, size_t size, int dim, int *shape){
     int i;
     double t1, t2, t3;
-    unsigned char *buf
+    unsigned char *buf;
     size_t outsize;
-    size_t r[5];
+    size_t r[4];
 
     t1 = getwalltime();
 
-    for(i = 0; i < 5; i++){
+    for(i = 0; i < 4; i++){
         if (i < dim){
             r[i] = shape[i];
         }
@@ -299,11 +297,20 @@ void compresswr_real(void *data, size_t size, int dim, int *shape){
             r[i] = 0;
         }
     }
-    for(i = 5; i < dim; i++){
-        r[4] *= shape[i];
+    for(i = 4; i < dim; i++){
+        r[3] *= shape[i];
+    }
+    
+    for(i = 3; i > -1; i--){
+        if (r[i] == 1){
+            r[i] = 0;
+        }
+        else {
+            break;
+        }
     }
 
-    buf = SZ_compress(SZ_DOUBLE, data, &outSize, r[4], r[3], r[2], r[1], r[0]);
+    buf = SZ_compress(SZ_DOUBLE, data, &outsize, 0, r[3], r[2], r[1], r[0]);
 
     t2 = getwalltime();
 
@@ -321,13 +328,12 @@ void compresswr_real(void *data, size_t size, int dim, int *shape){
 }
 
 void compressrd_real(void *data, size_t size, int dim, int *shape){
-    int ret;
-    size_t bufsize;  
-    size_t zfpsize;
+    int i;
+    int ret = 0;
     double t1, t2, t3;
-    unsigned char *out
-    size_t outsize;
-    size_t r[5];
+    unsigned char *out;
+    size_t outsize, bufsize;
+    size_t r[4];
     
     t1 = getwalltime();
 
@@ -338,7 +344,7 @@ void compressrd_real(void *data, size_t size, int dim, int *shape){
 
     t2 = getwalltime();
 
-    for(i = 0; i < 5; i++){
+    for(i = 0; i < 4; i++){
         if (i < dim){
             r[i] = shape[i];
         }
@@ -346,11 +352,22 @@ void compressrd_real(void *data, size_t size, int dim, int *shape){
             r[i] = 0;
         }
     }
-    for(i = 5; i < dim; i++){
-        r[4] *= shape[i];
+    for(i = 4; i < dim; i++){
+        r[3] *= shape[i];
+    }
+    for(i = 3; i > -1; i--){
+        if (r[i] == 1){
+            r[i] = 0;
+        }
+        else {
+            break;
+        }
     }
 
-    out = SZ_decompress(SZ_DOUBLE, buffer, bufsize, r[4], r[3], r[2], r[1], r[0]);
+    out = SZ_decompress(SZ_DOUBLE, buffer, bufsize, 0, r[3], r[2], r[1], r[0]);
+    if (out == NULL){
+        ret = -1;
+    }
 
     t3 = getwalltime();
 
@@ -491,6 +508,8 @@ void compressrd_int(void *data, size_t size, int dim, int *shape){
     }
 }
 */
+
+
 
 
 

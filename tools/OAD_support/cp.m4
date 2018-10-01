@@ -7,8 +7,6 @@ dnl
 
 
 
-
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -19,11 +17,12 @@ dnl
 #ifdef ALLOW_USE_MPI
 #include <mpi.h>
 #endif
-#include "zfp.h"
+#include "sz.h"
+#include <string.h>
 #include <time.h>
 
 #define MAXITR 1024
-#define BSIZE 1048576
+#define BSIZE 1048576 * 100
 #define THRESHOLD 1024
 
 static int cp_file_num = 0;
@@ -71,6 +70,7 @@ void cp_wr_open_(int *num){
     int rank;
     char fname[PATH_MAX]; 
     char *envfname;
+    sz_params sz;
 
     if (*num > 0){
         cp_file_num = *num;
@@ -83,7 +83,22 @@ void cp_wr_open_(int *num){
 #endif
 
     buffer_init();
-    
+
+    memset(&sz, 0, sizeof(sz_params));
+    sz.sol_ID = SZ;
+    sz.sampleDistance = 100;
+    sz.quantization_intervals = 0;
+    sz.max_quant_intervals = 65536;
+    sz.predThreshold = 0.98;
+    sz.szMode = SZ_BEST_COMPRESSION;
+    sz.losslessCompressor = ZSTD_COMPRESSOR;
+    sz.gzipMode = 1;
+    sz.errorBoundMode = ABS;
+    sz.absErrBound = 1E-3;
+    sz.relBoundRatio = 1E-5;
+
+    SZ_Init_Params(&sz);
+
     envfname = getenv("MITGCM_OAD_CP_PREFIX");
     if (envfname == NULL){
         envfname = "oad_cp";
@@ -112,6 +127,7 @@ void cp_rd_open_(int *num){
     int rank;
     char fname[PATH_MAX];
     char *envfname;
+    sz_params sz;
 
     if (*num > 0){
         cp_file_num = *num;
@@ -127,6 +143,21 @@ void cp_rd_open_(int *num){
 #endif
 
     buffer_init();
+
+    memset(&sz, 0, sizeof(sz_params));
+    sz.sol_ID = SZ;
+    sz.sampleDistance = 100;
+    sz.quantization_intervals = 0;
+    sz.max_quant_intervals = 65536;
+    sz.predThreshold = 0.98;
+    sz.szMode = SZ_BEST_COMPRESSION;
+    sz.losslessCompressor = ZSTD_COMPRESSOR;
+    sz.gzipMode = 1;
+    sz.errorBoundMode = ABS;
+    sz.absErrBound = 1E-3;
+    sz.relBoundRatio = 1E-5;
+
+    SZ_Init_Params(&sz);
     
     envfname = getenv("MITGCM_OAD_CP_PREFIX");
     if (envfname == NULL){
@@ -206,6 +237,8 @@ void cpc_close_(){
     }
 
     buffer_free();
+
+    SZ_Finalize();
 }
 
 void cpc_profile_(){
@@ -248,17 +281,120 @@ void cpc_profile_(){
     }
 }
 
-include(`foreach.m4')dnl
-include(`forloop.m4')dnl
 
-define(`CONCAT', `$1$2')dnl
 
-define(`ZFP',dnl
-`dnl
 
-void compresswr_$1(void *data, size_t size, int dim, int *shape){
+
+
+void compresswr_real(void *data, size_t size, int dim, int *shape){
+    int i;
+    double t1, t2, t3;
+    unsigned char *buf;
+    size_t outsize;
+    size_t r[4];
+
+    t1 = getwalltime();
+
+    for(i = 0; i < 4; i++){
+        if (i < dim){
+            r[i] = shape[i];
+        }
+        else{
+            r[i] = 0;
+        }
+    }
+    for(i = 4; i < dim; i++){
+        r[3] *= shape[i];
+    }
+    
+    for(i = 3; i > -1; i--){
+        if (r[i] == 1){
+            r[i] = 0;
+        }
+        else {
+            break;
+        }
+    }
+
+    buf = SZ_compress(SZ_DOUBLE, data, &outsize, 0, r[3], r[2], r[1], r[0]);
+
+    t2 = getwalltime();
+
+    write(fd, &outsize, sizeof(outsize));
+    write(fd, (void*)buf, outsize);
+
+    t3 = getwalltime();
+
+    compress_time += t2 - t1;
+    wr_time += t3 - t2;
+
+    free(buf);
+
+    //printf("Write %zu -> %zu\n", size, zfpsize);
+}
+
+void compressrd_real(void *data, size_t size, int dim, int *shape){
+    int i;
+    int ret = 0;
+    double t1, t2, t3;
+    unsigned char *out;
+    size_t outsize, bufsize;
+    size_t r[4];
+    
+    t1 = getwalltime();
+
+    // allocate buffer for compressed data                     
+    read(fd, &bufsize, sizeof(bufsize));
+    buffer_resize((size_t)bufsize);   
+    read(fd, (void*)buffer, bufsize);
+
+    t2 = getwalltime();
+
+    for(i = 0; i < 4; i++){
+        if (i < dim){
+            r[i] = shape[i];
+        }
+        else{
+            r[i] = 0;
+        }
+    }
+    for(i = 4; i < dim; i++){
+        r[3] *= shape[i];
+    }
+    for(i = 3; i > -1; i--){
+        if (r[i] == 1){
+            r[i] = 0;
+        }
+        else {
+            break;
+        }
+    }
+
+    out = SZ_decompress(SZ_DOUBLE, buffer, bufsize, 0, r[3], r[2], r[1], r[0]);
+    if (out == NULL){
+        ret = -1;
+    }
+
+    t3 = getwalltime();
+
+    memcpy(data, out, size);
+    free(out);
+
+    decompress_time += t3 - t2;
+    rd_time += t2 - t1;
+    
+    if (ret < 0) {
+        printf("Decompress fail: addr: %llx, size: %zu\n", data, size);   
+    }
+    else {
+        //printf("Read %zu -> %zu\n", bufsize, size);
+    }
+}
+
+/*
+void compresswr_int(void *data, size_t size, int dim, int *shape){
     zfp_stream *zfp;
-    zfp_type type = zfp_type_$2;                          
+    zfp_type type = zfp_type_int32;                          
     zfp_field *field;
     bitstream *stream;
     size_t bufsize;  
@@ -288,7 +424,7 @@ void compresswr_$1(void *data, size_t size, int dim, int *shape){
     zfp = zfp_stream_open(NULL);   
 
     // set tolerance for fixed-accuracy mode           
-    zfp_stream_set_accuracy(zfp, $3);                     
+    zfp_stream_set_accuracy(zfp, 0);                     
 
     // allocate buffer for compressed data
     bufsize = zfp_stream_maximum_size(zfp, field);    
@@ -315,10 +451,10 @@ void compresswr_$1(void *data, size_t size, int dim, int *shape){
     //printf("Write %zu -> %zu\n", size, zfpsize);
 }
 
-void compressrd_$1(void *data, size_t size, int dim, int *shape){
+void compressrd_int(void *data, size_t size, int dim, int *shape){
     zfp_stream *zfp;
     int ret;
-    zfp_type type = zfp_type_$2;                          
+    zfp_type type = zfp_type_int32;                          
     zfp_field *field;
     bitstream *stream;
     size_t bufsize;  
@@ -355,7 +491,7 @@ void compressrd_$1(void *data, size_t size, int dim, int *shape){
     zfp = zfp_stream_open(NULL);   
 
     // set tolerance for fixed-accuracy mode           
-    zfp_stream_set_accuracy(zfp, $3);                      
+    zfp_stream_set_accuracy(zfp, 0);                      
 
 
     // associate bit stream with allocated buffer
@@ -377,9 +513,12 @@ void compressrd_$1(void *data, size_t size, int dim, int *shape){
         //printf("Read %zu -> %zu\n", bufsize, size);
     }
 }
+*/
 
-')dnl
-dnl
+include(`foreach.m4')dnl
+include(`forloop.m4')dnl
+
+define(`CONCAT', `$1$2')dnl
 
 define(`CMP_REAL',changequote(`[', `]')dnl
 [dnl
@@ -416,9 +555,6 @@ void compressrd_$1_($2 *D, int *size, int *dim, int *shape  ) {
 
 ]changequote([`], [']))dnl
 dnl
-
-foreach(`_arg', (`(`real', `double', `0.0001')',dnl
-                `(`int', `int32', `0')'), `ZFP(translit(_arg, `()'))')
 
 foreach(`i', (`(`integer', `int', `int')',dnl
                 `(`bool', `int', `int')'), `CMP_REAL(translit(i, `()'))')

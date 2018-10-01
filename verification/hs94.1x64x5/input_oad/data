@@ -42,7 +42,7 @@
 # Time stepping parameters
  &PARM03
  nIter0=0,
- nTimeSteps=2,
+ nTimeSteps=3,
  abEps=0.1,
  deltaT=20.0,
  cAdjFreq=0.,
@@ -57,7 +57,7 @@
  &PARM04
  usingSphericalPolarGrid=.TRUE.,
  delX=1*2.8125,
- delY=262144*0.000686646,
+ delY=256*0.703125,
  delR=100.E2, 250.E2, 300.E2, 200.E2, 150.E2,
  ygOrigin=-90.,
  &
