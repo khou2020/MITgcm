@@ -81,7 +81,7 @@ cp_fd* cp_wr_open(char* fname, size_t fsize){
 
     topen = getwalltime();
 
-    fd->fd = open(fname, O_CREAT | O_WRONLY | O_TRUNC | O_DIRECT | O_SYNC, 0644);
+    fd->fd = open(fname, O_CREAT | O_WRONLY | O_TRUNC, 0644);
 
     return fd;
 }
@@ -95,13 +95,21 @@ int cp_wr_close(cp_fd *fd){
     int ret = 0;
     off_t wsize;
     ssize_t ioret;
-    double t1;
+    double t1, t2, t3;
 
 #ifdef ALLOW_USE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
     t1 = getwalltime();
+    fsync(fd->fd);
+    t2 = getwalltime();
+    
+#ifdef ALLOW_USE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+#endif
+
+    t3 = getwalltime();
 
     wsize = 0;
     while(fd->abuf < fd->cbuf){
@@ -111,8 +119,9 @@ int cp_wr_close(cp_fd *fd){
         }
         fd->abuf += ioret;
     }
-    
-    wr_time = getwalltime() - t1;
+    fsync(fd->fd);
+
+    wr_time = getwalltime() - t3 - t2 + t1;
 
     close(fd->fd);
 
@@ -140,7 +149,7 @@ cp_fd* cp_rd_open(char* fname){
 
     topen = getwalltime();
 
-    fd->fd = open(fname, O_RDONLY | O_DIRECT | O_SYNC, 0644);
+    fd->fd = open(fname, O_RDONLY, 0644);
 
 #ifdef ALLOW_USE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
