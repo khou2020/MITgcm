@@ -84,7 +84,7 @@ void buffer_resize(size_t size){
 
 void compresswr(void *R, int size) {
     int err;
-    double t1, t2, t3;
+    double t1, t2, t3, t4, t5;
     off_t wsize;
     ssize_t ioret;
 
