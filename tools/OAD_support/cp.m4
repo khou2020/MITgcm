@@ -126,16 +126,6 @@ void compresswr(void *R, int size) {
 
     t2 = getwalltime();
     
-    fsync(fd->fd);
-
-    t3 = getwalltime();
-
-#ifdef ALLOW_USE_MPI
-    MPI_Barrier(MPI_COMM_WORLD);
-#endif
-
-    t4 = getwalltime();
-
     // Size of variable
     dsize = (int)defstream.total_out;
     *((int*)buffer) = dsize;
@@ -150,15 +140,14 @@ void compresswr(void *R, int size) {
         }
         wsize += ioret;
     }
-    fsync(fd->fd);
     //write(fd->fd, buffer, defstream.total_out + sizeof(dsize));
 
-    t5 = getwalltime();
+    t3 = getwalltime();
     
     printf("Write: %d -> %d\n", size, dsize);
 
     compress_time += t2 - t1;
-    wr_time += t5 - t4 + t2 - t3;
+    wr_time += t3 - t2;
 }
 
 void compressrd(void *D) {
