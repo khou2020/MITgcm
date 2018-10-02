@@ -838,8 +838,8 @@ CCE107 Fixed for AIX and UNICOS
       userTime = tarray(1)
       systemTime = tarray(2)
 #  else
-C      userTime   = cusertime()
-C      systemTime = csystemtime()
+      userTime   = cusertime()
+      systemTime = csystemtime()
 #  endif
 #  if defined HAVE_CLOC
       CALL cloc(wTime)
